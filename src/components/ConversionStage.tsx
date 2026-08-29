@@ -91,14 +91,14 @@ export function ConversionStage({
         <div
           className="grid h-16 w-16 place-items-center rounded-2xl transition-all duration-500"
           style={{
-            background: "var(--surface)",
-            border: "1px solid var(--border)",
+            background: "var(--mark-plate)",
+            border: "1px solid var(--mark-plate-border)",
             boxShadow: running
               ? "0 0 0 6px color-mix(in oklab, var(--color-teal-500) 12%, transparent), 0 12px 30px -14px rgba(0,174,169,0.7)"
               : "0 6px 18px -12px rgba(7,32,58,0.5)",
           }}
         >
-          <Mark className={`h-9 w-9 transition-opacity ${running ? "opacity-100" : "opacity-45"}`} />
+          <Mark className={`w-10 transition-opacity ${running ? "opacity-100" : "opacity-45"}`} />
         </div>
       </div>
 

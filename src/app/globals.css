@@ -4,19 +4,21 @@
    New England CareFlow — brand tokens
    Palette taken from the corporate mark: deep navy + seagreen teal.
    ------------------------------------------------------------------ */
+/* Brand primaries, sampled from the corporate mark:
+   navy #052C52, seagreen #04ACAF. */
 @theme {
-  --color-navy-950: #04121f;
-  --color-navy-900: #07203a;
-  --color-navy-800: #0a2d4f;
-  --color-navy-700: #0e3d68;
-  --color-navy-600: #14507f;
-  --color-navy-500: #1d6699;
+  --color-navy-950: #02101f;
+  --color-navy-900: #041d36;
+  --color-navy-800: #052c52;
+  --color-navy-700: #073d6f;
+  --color-navy-600: #0a5089;
+  --color-navy-500: #1268a8;
 
-  --color-teal-600: #008f8b;
-  --color-teal-500: #00aea9;
-  --color-teal-400: #21c7bf;
-  --color-teal-300: #5fdcd4;
-  --color-teal-200: #a6ede8;
+  --color-teal-600: #038e91;
+  --color-teal-500: #04acaf;
+  --color-teal-400: #1ac6c8;
+  --color-teal-300: #5cdcdd;
+  --color-teal-200: #a4eeee;
 
   --color-mist-50: #f6fafb;
   --color-mist-100: #eef4f7;
@@ -46,12 +48,16 @@
   --text-dim: #5f7889;
   --grid: rgba(14, 61, 104, 0.055);
 
-  /* Mark strokes. The navy lightens on dark ground so the "N" keeps
-     its contrast against the plate. */
-  --mark-navy-1: #1d6699;
-  --mark-navy-2: #0a2d4f;
-  --mark-teal-1: #21c7bf;
-  --mark-teal-2: #008f8b;
+  /* Brand fills are fixed in both themes — navy N, seagreen C. The mark
+     always sits on a light plate so the true navy keeps its contrast. */
+  --mark-navy: #052c52;
+  --mark-teal: #04acaf;
+  --mark-plate: #ffffff;
+  --mark-plate-border: #dbe7ee;
+  --steth-opacity: 0.09;
+  --paper-opacity: 0.55;
+  --paper-blend: multiply;
+  --grain-opacity: 0.5;
 }
 
 :root:not([data-theme="light"]) {
@@ -64,10 +70,12 @@
     --text-dim: #8fa8b8;
     --grid: rgba(95, 220, 212, 0.07);
 
-    --mark-navy-1: #8cc9f0;
-    --mark-navy-2: #4a97d4;
-    --mark-teal-1: #7fe8e0;
-    --mark-teal-2: #14b8b0;
+    --mark-plate: #eef4f7;
+    --mark-plate-border: rgba(255, 255, 255, 0.14);
+    --steth-opacity: 0.1;
+    --paper-opacity: 0.07;
+    --paper-blend: overlay;
+    --grain-opacity: 0.4;
   }
 }
 
@@ -80,10 +88,12 @@
   --text-dim: #8fa8b8;
   --grid: rgba(95, 220, 212, 0.07);
 
-  --mark-navy-1: #8cc9f0;
-  --mark-navy-2: #4a97d4;
-  --mark-teal-1: #7fe8e0;
-  --mark-teal-2: #14b8b0;
+  --mark-plate: #eef4f7;
+  --mark-plate-border: rgba(255, 255, 255, 0.14);
+  --steth-opacity: 0.1;
+  --paper-opacity: 0.07;
+  --paper-blend: overlay;
+  --grain-opacity: 0.4;
 }
 
 * {
@@ -103,13 +113,27 @@ body {
   min-height: 100dvh;
 }
 
-/* Faint clinical grid — the "chart paper" ground. */
-.clinical-grid {
-  background-image:
-    linear-gradient(to right, var(--grid) 1px, transparent 1px),
-    linear-gradient(to bottom, var(--grid) 1px, transparent 1px);
-  background-size: 44px 44px;
-  background-position: center center;
+/* Plaster wash + seamless grain. Replaces the old ruled grid. */
+.texture-paper {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("/brand/paper.jpg");
+  background-size: cover;
+  background-position: center;
+  opacity: var(--paper-opacity);
+  mix-blend-mode: var(--paper-blend);
+}
+
+.texture-grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: url("/brand/grain.png");
+  background-repeat: repeat;
+  background-size: 180px 180px;
+  opacity: var(--grain-opacity);
+  mix-blend-mode: overlay;
 }
 
 /* ------------------------------------------------------------------
@@ -217,10 +241,53 @@ body {
   }
 }
 
+/* Extruded body: stacked faces along Z give the tile real thickness, so the
+   spin reveals a solid edge instead of a flat card flipping over. */
+.mark-solid {
+  transform-style: preserve-3d;
+}
+
+.mark-face {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  backface-visibility: hidden;
+}
+
+/* ------------------------------------------------------------------
+   Stethoscope backdrop — slow 3D revolve on its own axis.
+   ------------------------------------------------------------------ */
+.steth-stage {
+  perspective: 1400px;
+  perspective-origin: 50% 45%;
+}
+
+.steth-revolve {
+  transform-style: preserve-3d;
+  will-change: transform;
+  animation: stethRevolve 26s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+@keyframes stethRevolve {
+  0% {
+    transform: rotateY(-24deg) rotateX(8deg) rotateZ(-3deg) translateZ(0);
+  }
+  50% {
+    transform: rotateY(24deg) rotateX(-6deg) rotateZ(3deg) translateZ(40px);
+  }
+  100% {
+    transform: rotateY(-24deg) rotateX(8deg) rotateZ(-3deg) translateZ(0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .mark-spinner,
   .mark-ring,
-  .mark-sheen {
+  .mark-sheen,
+  .steth-revolve,
+  .orbit-ring,
+  .orbit-ring-rev,
+  .flow-line {
     animation: none;
   }
   .mark-ring {

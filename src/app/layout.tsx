@@ -42,6 +42,9 @@ export const viewport: Viewport = {
   ],
 };
 
+// favicon.ico and apple-icon.png in this directory are picked up automatically,
+// as is manifest.ts.
+
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {

@@ -89,15 +89,52 @@ src/
 
 ## Branding
 
-The `NC` mark in `src/components/Logo.tsx` and `src/app/icon.svg` is a
-hand-built vector recreation of the corporate logo. **If the official artwork
-exists as `.svg` / `.ai` / `.eps`, replace the paths inside `<g id="mark-art">`
-and the `icon.svg` equivalent** — every other part of the site is driven from
-those two files and will pick the change up unchanged.
+The mark is the **official corporate artwork** — a stethoscope drawn so its
+binaural and tubing form the `N`. Vector paths live in
+`src/components/Logo.tsx` under `<g id="mark-art">`.
 
-Brand colours are defined once as CSS custom properties in `globals.css`
-(`--mark-navy-*`, `--mark-teal-*`, plus the `navy` / `teal` / `mist` Tailwind
-scales) and flip automatically for dark mode.
+The brand fills are **fixed in both themes** — navy `#052C52` for the `N`,
+seagreen `#04ACAF` for the `C`. Because navy needs light ground to read, the
+mark always travels on a light plate (`MarkChip`, and the hero tile itself)
+rather than being recoloured on dark backgrounds.
+
+Favicons are the supplied RealFaviconGenerator set: `src/app/favicon.ico` and
+`src/app/apple-icon.png` are picked up automatically by the App Router, and
+`public/brand/icon-{96,192,512}.png` back `src/app/manifest.ts`.
+
+Brand colours (navy `#052C52`, seagreen `#04ACAF`) are defined once as CSS
+custom properties in `globals.css` and flip automatically for dark mode.
+
+### Motion
+
+The hero mark is an **extruded 3D tile** — 16 faces stacked along Z for ~21px
+of real thickness — that rests, snaps a fast 360 degree revolve on its own Y
+axis every 5s, then runs a shine around its border. The stethoscope backdrop
+revolves on a slow 26s axis behind the hero. Both are CSS 3D transforms on
+vector/raster art rather than WebGL, and both stop under
+`prefers-reduced-motion`.
+
+### Texture
+
+The page ground is a plaster sheet (`public/brand/paper.jpg`) under a seamless
+180px grain tile (`public/brand/grain.png`), composited with `mix-blend-mode`
+and driven by `--paper-opacity` / `--paper-blend` / `--grain-opacity` so the
+same two files read correctly in both themes.
+
+## Asset credits
+
+- **Stethoscope backdrop** (`public/brand/stethoscope.png`) — Vecteezy asset,
+  processed here to remove its white matte. **The Vecteezy Free License
+  requires attribution**, which the site footer carries as a link to
+  `vecteezy.com`. If the company holds a Pro License, that credit can be
+  removed.
+- **Plaster sheet** (`public/brand/paper.jpg`) — Unsplash (NordWood Themes),
+  downscaled and recompressed. The Unsplash License does not require
+  attribution.
+- **Grain tile** (`public/brand/grain.png`) — seamless texture supplied with
+  the brand assets.
+
+Confirm the licence tier held for each before this goes public.
 
 ## Data policy
 

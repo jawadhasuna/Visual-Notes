@@ -1,6 +1,7 @@
 "use client";
 
 import { MarkStage } from "./MarkStage";
+import { StethoscopeBackdrop } from "./StethoscopeBackdrop";
 
 const STATS = [
   { value: "44.2%", label: "lower perceived workload" },
@@ -10,7 +11,11 @@ const STATS = [
 
 export function Hero() {
   return (
-    <section className="clinical-grid relative overflow-hidden">
+    <section className="relative overflow-hidden">
+      {/* supplied plaster sheet + seamless grain */}
+      <div aria-hidden className="texture-paper" />
+      <div aria-hidden className="texture-grain" />
+
       {/* soft brand wash */}
       <div
         aria-hidden
@@ -21,8 +26,10 @@ export function Hero() {
         }}
       />
 
+      <StethoscopeBackdrop />
+
       <div className="relative mx-auto flex w-full max-w-[1500px] flex-col items-center px-5 pt-16 pb-20 text-center">
-        <MarkStage size={168} />
+        <MarkStage size={176} />
 
         <p
           className="font-mono mt-2 text-[10px] font-bold tracking-[0.32em] uppercase"
