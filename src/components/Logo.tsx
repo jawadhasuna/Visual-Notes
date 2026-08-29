@@ -26,6 +26,13 @@ export function Mark({
       xmlns="http://www.w3.org/2000/svg"
     >
       <g id="mark-art">
+        {/* Bridges the notch where the N's diagonal meets its shoulder.
+            Drawn first, so it only shows through that gap. */}
+        <path
+          fill="var(--mark-navy)"
+          d="M120.5 64.5 C124.5 66 127.5 68.2 129.2 71.5 C130.6 74.4 130.2 77.4 128.6 79.8 C126.5 81.6 123 82.6 119.5 82 C116 81.2 113.2 79 112.2 75.6 C111.4 72.4 112.6 68.6 115 66.4 C116.7 65 118.6 64.3 120.5 64.5 Z"
+        />
+
         {/* Seagreen — tubing sweeping right into the chest piece */}
         <path
           fill="var(--mark-teal)"

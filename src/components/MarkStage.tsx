@@ -33,38 +33,6 @@ export function MarkStage({ size = 300 }: { size?: number }) {
         }}
       />
 
-      {/* Counter-rotating instrument rings */}
-      <svg
-        aria-hidden
-        viewBox="0 0 200 200"
-        className="orbit-ring pointer-events-none absolute top-1/2 left-1/2 h-[132%] w-[132%] -translate-x-1/2 -translate-y-1/2 opacity-40"
-      >
-        <circle
-          cx="100"
-          cy="100"
-          r="88"
-          fill="none"
-          stroke="var(--color-teal-400)"
-          strokeWidth="0.6"
-          strokeDasharray="2 12"
-        />
-      </svg>
-      <svg
-        aria-hidden
-        viewBox="0 0 200 200"
-        className="orbit-ring-rev pointer-events-none absolute top-1/2 left-1/2 h-[114%] w-[114%] -translate-x-1/2 -translate-y-1/2 opacity-30"
-      >
-        <circle
-          cx="100"
-          cy="100"
-          r="78"
-          fill="none"
-          stroke="var(--color-navy-500)"
-          strokeWidth="0.7"
-          strokeDasharray="24 16"
-        />
-      </svg>
-
       {/* The revolving extruded artwork */}
       <div
         className="mark-spinner relative"

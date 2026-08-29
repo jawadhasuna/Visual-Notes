@@ -54,40 +54,7 @@ export function ConversionStage({
       </svg>
 
       {/* Core */}
-      <div className="relative grid h-28 w-28 place-items-center">
-        <svg
-          viewBox="0 0 120 120"
-          className={`absolute inset-0 h-full w-full ${running ? "orbit-ring" : ""}`}
-          aria-hidden
-        >
-          <circle
-            cx="60"
-            cy="60"
-            r="54"
-            fill="none"
-            stroke={running ? "var(--color-teal-400)" : "var(--border)"}
-            strokeWidth="2"
-            strokeDasharray={running ? "10 14" : "3 6"}
-            opacity={running ? 0.95 : 0.6}
-          />
-        </svg>
-        <svg
-          viewBox="0 0 120 120"
-          className={`absolute inset-0 h-full w-full ${running ? "orbit-ring-rev" : ""}`}
-          aria-hidden
-        >
-          <circle
-            cx="60"
-            cy="60"
-            r="44"
-            fill="none"
-            stroke={running ? "var(--color-navy-500)" : "var(--border)"}
-            strokeWidth="1.5"
-            strokeDasharray="4 10"
-            opacity={running ? 0.8 : 0.4}
-          />
-        </svg>
-
+      <div className="relative grid place-items-center">
         <div
           className="grid h-16 w-16 place-items-center rounded-2xl transition-all duration-500"
           style={{
