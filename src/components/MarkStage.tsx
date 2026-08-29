@@ -2,31 +2,34 @@
 
 import { Mark } from "./Logo";
 
-/** Faces stacked along Z. More layers = smoother edge, at ~1 div each. */
-const DEPTH_LAYERS = 16;
-const LAYER_STEP = 1.4;
+/** Copies of the artwork stacked along Z to give the strokes real depth. */
+const DEPTH_LAYERS = 20;
+const LAYER_STEP = 1.1;
 
 /**
- * Hero mark: an extruded 3D tile carrying the corporate stethoscope mark.
- * It rests, then every 5s snaps a fast 360° revolve on its own Y axis —
- * the stacked faces show real thickness as it turns — and finishes with a
- * shine racing around the border.
+ * Hero mark: the corporate artwork extruded in 3D — no plate, no card, just
+ * the mark itself with thickness. It rests, then every 5s snaps a fast 360°
+ * revolve on its own Y axis.
+ *
+ * Brand navy is dark, so a soft feathered bloom sits behind the mark to give
+ * the N something to read against without putting a hard edge anywhere.
  */
-export function MarkStage({ size = 176 }: { size?: number }) {
-  const depth = DEPTH_LAYERS * LAYER_STEP;
-
+export function MarkStage({ size = 300 }: { size?: number }) {
   return (
     <div
       className="mark-stage relative grid place-items-center"
-      style={{ width: size * 1.6, height: size * 1.6 }}
+      style={{ width: size, height: size * 0.8 }}
     >
-      {/* Ambient glow bed */}
+      {/* Feathered bloom — the light the navy reads against */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 rounded-full blur-3xl"
+        className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
         style={{
+          width: size * 1.02,
+          height: size * 0.66,
           background:
-            "radial-gradient(circle at 50% 45%, color-mix(in oklab, var(--color-teal-500) 30%, transparent), color-mix(in oklab, var(--color-navy-600) 16%, transparent) 45%, transparent 72%)",
+            "radial-gradient(ellipse, rgba(126,214,222,0.30) 0%, rgba(86,178,206,0.20) 34%, rgba(12,86,140,0.14) 56%, transparent 76%)",
+          filter: "blur(20px)",
         }}
       />
 
@@ -34,7 +37,7 @@ export function MarkStage({ size = 176 }: { size?: number }) {
       <svg
         aria-hidden
         viewBox="0 0 200 200"
-        className="orbit-ring pointer-events-none absolute inset-0 h-full w-full opacity-45"
+        className="orbit-ring pointer-events-none absolute top-1/2 left-1/2 h-[132%] w-[132%] -translate-x-1/2 -translate-y-1/2 opacity-40"
       >
         <circle
           cx="100"
@@ -44,13 +47,12 @@ export function MarkStage({ size = 176 }: { size?: number }) {
           stroke="var(--color-teal-400)"
           strokeWidth="0.6"
           strokeDasharray="2 12"
-          opacity="0.75"
         />
       </svg>
       <svg
         aria-hidden
         viewBox="0 0 200 200"
-        className="orbit-ring-rev pointer-events-none absolute inset-0 h-full w-full opacity-35"
+        className="orbit-ring-rev pointer-events-none absolute top-1/2 left-1/2 h-[114%] w-[114%] -translate-x-1/2 -translate-y-1/2 opacity-30"
       >
         <circle
           cx="100"
@@ -63,15 +65,20 @@ export function MarkStage({ size = 176 }: { size?: number }) {
         />
       </svg>
 
-      {/* The revolving extruded tile */}
-      <div className="mark-spinner relative" style={{ width: size, height: size }}>
+      {/* The revolving extruded artwork */}
+      <div
+        className="mark-spinner relative"
+        style={{ width: size * 0.72, height: size * 0.44 }}
+      >
         <div
-          className="mark-solid relative h-full w-full rounded-[26%]"
-          style={{ transform: `translateZ(${-depth / 2}px)` }}
+          className="mark-solid relative h-full w-full"
+          style={{
+            transform: `translateZ(${(-DEPTH_LAYERS * LAYER_STEP) / 2}px)`,
+          }}
         >
-          {/* Extrusion body — deepest first so the front face paints last */}
+          {/* Extrusion body, deepest first so the lit face paints last */}
           {Array.from({ length: DEPTH_LAYERS }, (_, i) => {
-            const t = i / (DEPTH_LAYERS - 1); // 0 = front, 1 = back
+            const t = i / (DEPTH_LAYERS - 1); // 0 = face, 1 = deepest
             return (
               <span
                 key={i}
@@ -79,38 +86,24 @@ export function MarkStage({ size = 176 }: { size?: number }) {
                 className="mark-face"
                 style={{
                   transform: `translateZ(${-i * LAYER_STEP}px)`,
-                  background: `color-mix(in oklab, var(--mark-plate) ${Math.round(
-                    100 - t * 62,
-                  )}%, #052c52)`,
-                  border: i === 0 ? "1px solid var(--mark-plate-border)" : "none",
+                  filter: `brightness(${(1 - t * 0.7).toFixed(3)}) saturate(${(
+                    1 - t * 0.3
+                  ).toFixed(3)})`,
                 }}
-              />
+              >
+                <Mark className="h-full w-full" />
+              </span>
             );
           })}
 
-          {/* Front face — artwork, sheen, shine ring */}
-          <div
-            className="absolute inset-0 grid place-items-center rounded-[26%]"
-            style={{
-              transform: `translateZ(${LAYER_STEP}px)`,
-              background:
-                "linear-gradient(155deg, #ffffff 0%, var(--mark-plate) 60%, #e4eef3 100%)",
-              border: "1px solid var(--mark-plate-border)",
-              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.5)",
-            }}
+          {/* Lit front face */}
+          <span
+            className="mark-face mark-gleam"
+            style={{ transform: `translateZ(${LAYER_STEP}px)` }}
           >
-            <Mark className="w-[72%]" />
-            <span aria-hidden className="mark-sheen rounded-[26%]" />
-            <span aria-hidden className="mark-ring rounded-[26%]" />
-          </div>
+            <Mark className="h-full w-full" />
+          </span>
         </div>
-
-        {/* Contact shadow, kept flat on the page rather than in the 3D space */}
-        <span
-          aria-hidden
-          className="pointer-events-none absolute -bottom-6 left-1/2 h-6 w-[78%] -translate-x-1/2 rounded-[50%] blur-lg"
-          style={{ background: "rgba(2,16,31,0.38)" }}
-        />
       </div>
     </div>
   );

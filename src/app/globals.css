@@ -40,60 +40,28 @@
 }
 
 :root {
-  --bg: #f6fafb;
-  --surface: #ffffff;
-  --surface-2: #f2f7fa;
-  --border: #dbe7ee;
-  --text: #07203a;
-  --text-dim: #5f7889;
-  --grid: rgba(14, 61, 104, 0.055);
+  color-scheme: dark;
 
-  /* Brand fills are fixed in both themes — navy N, seagreen C. The mark
-     always sits on a light plate so the true navy keeps its contrast. */
-  --mark-navy: #052c52;
-  --mark-teal: #04acaf;
-  --mark-plate: #ffffff;
-  --mark-plate-border: #dbe7ee;
-  --steth-opacity: 0.09;
-  --paper-opacity: 0.55;
-  --paper-blend: multiply;
-  --grain-opacity: 0.5;
-}
-
-:root:not([data-theme="light"]) {
-  @media (prefers-color-scheme: dark) {
-    --bg: #04121f;
-    --surface: #0a2439;
-    --surface-2: #0c2c41;
-    --border: rgba(95, 220, 212, 0.16);
-    --text: #eaf4f7;
-    --text-dim: #8fa8b8;
-    --grid: rgba(95, 220, 212, 0.07);
-
-    --mark-plate: #eef4f7;
-    --mark-plate-border: rgba(255, 255, 255, 0.14);
-    --steth-opacity: 0.1;
-    --paper-opacity: 0.07;
-    --paper-blend: overlay;
-    --grain-opacity: 0.4;
-  }
-}
-
-:root[data-theme="dark"] {
+  /* The site commits to the deep navy ground — no light theme. */
   --bg: #04121f;
   --surface: #0a2439;
   --surface-2: #0c2c41;
   --border: rgba(95, 220, 212, 0.16);
   --text: #eaf4f7;
   --text-dim: #8fa8b8;
-  --grid: rgba(95, 220, 212, 0.07);
 
+  /* Brand fills are absolute: navy N, seagreen C, everywhere. */
+  --mark-navy: #052c52;
+  --mark-teal: #04acaf;
+
+  /* Small lockups keep a light chip so the navy reads at 32px. */
   --mark-plate: #eef4f7;
-  --mark-plate-border: rgba(255, 255, 255, 0.14);
-  --steth-opacity: 0.1;
-  --paper-opacity: 0.07;
+  --mark-plate-border: rgba(255, 255, 255, 0.16);
+
+  --steth-opacity: 0.11;
+  --paper-opacity: 0.1;
   --paper-blend: overlay;
-  --grain-opacity: 0.4;
+  --grain-opacity: 0.45;
 }
 
 * {
@@ -250,8 +218,37 @@ body {
 .mark-face {
   position: absolute;
   inset: 0;
-  border-radius: inherit;
-  backface-visibility: hidden;
+}
+
+/* The mark has no border to sweep now, so the shine beat lands as a short
+   gleam across the lit face right after the spin. */
+.mark-gleam {
+  animation: markGleam 5s linear infinite;
+}
+
+@keyframes markGleam {
+  0%,
+  85% {
+    filter: drop-shadow(0 0 10px rgba(150, 224, 236, 0.55))
+      drop-shadow(0 0 2px rgba(226, 246, 251, 0.85));
+  }
+  90% {
+    filter: brightness(1.3) drop-shadow(0 0 22px rgba(150, 230, 240, 0.95))
+      drop-shadow(0 0 4px rgba(240, 252, 255, 1));
+  }
+  97%,
+  100% {
+    filter: drop-shadow(0 0 10px rgba(150, 224, 236, 0.55))
+      drop-shadow(0 0 2px rgba(226, 246, 251, 0.85));
+  }
+}
+
+/* Reduced motion still gets the standing rim light, just no pulse. */
+@media (prefers-reduced-motion: reduce) {
+  .mark-gleam {
+    filter: drop-shadow(0 0 10px rgba(150, 224, 236, 0.55))
+      drop-shadow(0 0 2px rgba(226, 246, 251, 0.85));
+  }
 }
 
 /* ------------------------------------------------------------------
@@ -282,6 +279,7 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .mark-spinner,
+  .mark-gleam,
   .mark-ring,
   .mark-sheen,
   .steth-revolve,

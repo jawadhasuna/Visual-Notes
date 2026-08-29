@@ -93,10 +93,14 @@ The mark is the **official corporate artwork** — a stethoscope drawn so its
 binaural and tubing form the `N`. Vector paths live in
 `src/components/Logo.tsx` under `<g id="mark-art">`.
 
-The brand fills are **fixed in both themes** — navy `#052C52` for the `N`,
-seagreen `#04ACAF` for the `C`. Because navy needs light ground to read, the
-mark always travels on a light plate (`MarkChip`, and the hero tile itself)
-rather than being recoloured on dark backgrounds.
+The brand fills are **fixed** — navy `#052C52` for the `N`, seagreen `#04ACAF`
+for the `C`. The site commits to the deep navy ground (no light theme), so the
+artwork is never recoloured to suit a background.
+
+Navy needs separation from that ground. The hero mark gets it from a rim light
+(`.mark-gleam`) rather than a plate, so it floats free. The small header and
+footer lockups keep a light chip (`MarkChip`), which is what makes the navy
+legible at 32px.
 
 Favicons are the supplied RealFaviconGenerator set: `src/app/favicon.ico` and
 `src/app/apple-icon.png` are picked up automatically by the App Router, and
@@ -107,9 +111,10 @@ custom properties in `globals.css` and flip automatically for dark mode.
 
 ### Motion
 
-The hero mark is an **extruded 3D tile** — 16 faces stacked along Z for ~21px
-of real thickness — that rests, snaps a fast 360 degree revolve on its own Y
-axis every 5s, then runs a shine around its border. The stethoscope backdrop
+The hero mark is the **artwork itself extruded in 3D** — 20 copies stacked
+along Z for ~21px of real thickness, progressively darkened so the strokes read
+as solid. It rests, snaps a fast 360 degree revolve on its own Y axis every 5s,
+then pulses a gleam across the lit face. The stethoscope backdrop
 revolves on a slow 26s axis behind the hero. Both are CSS 3D transforms on
 vector/raster art rather than WebGL, and both stop under
 `prefers-reduced-motion`.
@@ -117,9 +122,9 @@ vector/raster art rather than WebGL, and both stop under
 ### Texture
 
 The page ground is a plaster sheet (`public/brand/paper.jpg`) under a seamless
-180px grain tile (`public/brand/grain.png`), composited with `mix-blend-mode`
-and driven by `--paper-opacity` / `--paper-blend` / `--grain-opacity` so the
-same two files read correctly in both themes.
+180px grain tile (`public/brand/grain.png`), both composited over the navy with
+`mix-blend-mode: overlay` so they add tooth without lightening the ground.
+Strength is tunable via `--paper-opacity` / `--grain-opacity`.
 
 ## Asset credits
 

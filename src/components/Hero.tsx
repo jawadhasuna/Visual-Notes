@@ -29,7 +29,7 @@ export function Hero() {
       <StethoscopeBackdrop />
 
       <div className="relative mx-auto flex w-full max-w-[1500px] flex-col items-center px-5 pt-16 pb-20 text-center">
-        <MarkStage size={176} />
+        <MarkStage size={320} />
 
         <p
           className="font-mono mt-2 text-[10px] font-bold tracking-[0.32em] uppercase"
