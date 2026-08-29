@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="256" y2="256" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0e3d68"/>
+      <stop offset="60%" stop-color="#0a2d4f"/>
+      <stop offset="100%" stop-color="#04121f"/>
+    </linearGradient>
+    <linearGradient id="tl" x1="112" y1="82" x2="200" y2="176" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#7fe8e0"/>
+      <stop offset="100%" stop-color="#00aea9"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="256" height="256" rx="58" fill="url(#bg)"/>
+
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <!-- seagreen C, passes under -->
+    <path d="M182.4 94.4 A46 46 0 1 0 182.4 161.6" stroke="url(#tl)" stroke-width="26"/>
+
+    <!-- navy N, lifted clear by a background-coloured casing -->
+    <path d="M59 180 V80 L119 172 V76" stroke="#0a2d4f" stroke-width="40"/>
+    <path d="M59 180 V80 L119 172 V76" stroke="#ffffff" stroke-width="26"/>
+
+    <!-- weave: C crosses back over at the lower junction -->
+    <path d="M126.6 167 A46 46 0 0 1 112 152.4" stroke="#0a2d4f" stroke-width="40"/>
+    <path d="M126.6 167 A46 46 0 0 1 112 152.4" stroke="url(#tl)" stroke-width="26"/>
+
+    <!-- junction node -->
+    <circle cx="119" cy="95" r="10" fill="#0a2d4f" stroke="none"/>
+    <circle cx="119" cy="95" r="5.5" fill="#00aea9" stroke="none"/>
+  </g>
+</svg>
