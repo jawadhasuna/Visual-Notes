@@ -154,14 +154,14 @@ body {
 
 @keyframes markGlare {
   0%,
-  85% {
+  92% {
     transform: translateX(0);
     opacity: 0;
   }
-  88% {
+  93% {
     opacity: 1;
   }
-  99% {
+  99.5% {
     transform: translateX(330px);
     opacity: 1;
   }
@@ -170,6 +170,7 @@ body {
     opacity: 0;
   }
 }
+
 
 .mark-face {
   position: absolute;
@@ -198,20 +199,22 @@ body {
 
 @keyframes markLand {
   0%,
-  84% {
+  85% {
     filter: brightness(1) drop-shadow(0 2px 1px rgba(2, 10, 20, 0.55))
       drop-shadow(0 10px 18px rgba(2, 10, 20, 0.45));
   }
-  89% {
+  88% {
     filter: brightness(1.16) drop-shadow(0 2px 1px rgba(2, 10, 20, 0.55))
       drop-shadow(0 0 9px rgba(226, 244, 250, 0.42))
       drop-shadow(0 0 24px rgba(140, 205, 226, 0.3));
   }
+  92%,
   100% {
     filter: brightness(1) drop-shadow(0 2px 1px rgba(2, 10, 20, 0.55))
       drop-shadow(0 10px 18px rgba(2, 10, 20, 0.45));
   }
 }
+
 
 
 /* ------------------------------------------------------------------
