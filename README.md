@@ -96,6 +96,33 @@ The corpus path is an argument on purpose: credentialed source text stays
 outside this repository, and `--out` writes per-case JSON to a gitignored
 directory.
 
+## Extraction
+
+Notes in, verified chart out. `POST /api/extract` runs server-side against
+Gemini 3.7 Flash on Vertex AI, using Application Default Credentials so no key
+lives in the repo.
+
+```bash
+npm run check:vertex     # credentials, model, schema support
+npm run check:schema     # one real end-to-end extraction
+npm run batch -- path/to/all_cases.txt --limit 5
+```
+
+Two things about how this works are worth knowing, both found by testing
+rather than planned:
+
+**Vertex speaks OpenAPI, not JSON Schema.** It rejects union types outright.
+`vertexSchema.ts` translates the strict schema for the request; the strict
+schema remains the validation gate, so a lossy translation can never widen
+what is accepted.
+
+**The model is never asked for character offsets.** Asked directly, it quotes
+accurately but places the quote at the wrong position — language models have no
+character-level positional sense. It supplies a verbatim quote and the offsets
+are derived with `indexOf`. That strengthens the guarantee: offsets cannot be
+wrong because they are computed, and a fabricated quote cannot be located, so
+it is rejected before rendering.
+
 ## Getting started
 
 ```bash

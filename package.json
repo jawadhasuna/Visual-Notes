@@ -11,7 +11,8 @@
     "schema:validate": "node scripts/validate-visual-note.mjs schema/example-synthetic-case-001.json",
     "segment": "node scripts/segment.mjs",
     "check:vertex": "node scripts/check-vertex.mjs",
-    "check:schema": "node scripts/check-schema.ts"
+    "check:schema": "node scripts/check-schema.ts",
+    "batch": "node scripts/batch.ts"
   },
   "dependencies": {
     "google-auth-library": "^11.0.2",
