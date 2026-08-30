@@ -3,40 +3,26 @@
 import { Mark } from "./Logo";
 
 /** Copies of the artwork stacked along Z to give the strokes real depth. */
-const DEPTH_LAYERS = 20;
-const LAYER_STEP = 1.1;
+const DEPTH_LAYERS = 30;
+const LAYER_STEP = 1.5;
 
 /**
- * Hero mark: the corporate artwork extruded in 3D — no plate, no card, just
- * the mark itself with thickness. It rests, then every 5s snaps a fast 360°
- * revolve on its own Y axis.
+ * Hero mark: the corporate artwork extruded into a solid — no plate, no glow,
+ * just the mark with real thickness.
  *
- * Brand navy is dark, so a soft feathered bloom sits behind the mark to give
- * the N something to read against without putting a hard edge anywhere.
+ * It sits turned slightly off-axis so the extruded side wall is visible at
+ * rest, then every 5s snaps a fast 360° revolve on its own Y axis and settles
+ * back to that resting angle.
  */
-export function MarkStage({ size = 300 }: { size?: number }) {
+export function MarkStage({ size = 320 }: { size?: number }) {
   return (
     <div
       className="mark-stage relative grid place-items-center"
       style={{ width: size, height: size * 0.8 }}
     >
-      {/* Feathered bloom — the light the navy reads against */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
-        style={{
-          width: size * 1.12,
-          height: size * 0.74,
-          background:
-            "radial-gradient(ellipse, rgba(104,186,204,0.17) 0%, rgba(58,132,176,0.13) 38%, rgba(10,62,112,0.09) 62%, transparent 80%)",
-          filter: "blur(30px)",
-        }}
-      />
-
-      {/* The revolving extruded artwork */}
       <div
         className="mark-spinner relative"
-        style={{ width: size * 0.72, height: size * 0.44 }}
+        style={{ width: size * 0.74, height: size * 0.455 }}
       >
         <div
           className="mark-solid relative h-full w-full"
@@ -44,9 +30,9 @@ export function MarkStage({ size = 300 }: { size?: number }) {
             transform: `translateZ(${(-DEPTH_LAYERS * LAYER_STEP) / 2}px)`,
           }}
         >
-          {/* Extrusion body, deepest first so the lit face paints last */}
+          {/* Side wall: copies receding along Z, falling off into shadow */}
           {Array.from({ length: DEPTH_LAYERS }, (_, i) => {
-            const t = i / (DEPTH_LAYERS - 1); // 0 = face, 1 = deepest
+            const t = i / (DEPTH_LAYERS - 1); // 0 = just behind the face, 1 = deepest
             return (
               <span
                 key={i}
@@ -54,8 +40,8 @@ export function MarkStage({ size = 300 }: { size?: number }) {
                 className="mark-face"
                 style={{
                   transform: `translateZ(${-i * LAYER_STEP}px)`,
-                  filter: `brightness(${(1 - t * 0.7).toFixed(3)}) saturate(${(
-                    1 - t * 0.3
+                  filter: `brightness(${(1 - t * 0.46).toFixed(3)}) saturate(${(
+                    1 - t * 0.18
                   ).toFixed(3)})`,
                 }}
               >
@@ -64,9 +50,9 @@ export function MarkStage({ size = 300 }: { size?: number }) {
             );
           })}
 
-          {/* Lit front face */}
+          {/* Front face, in true brand colour */}
           <span
-            className="mark-face mark-gleam"
+            className="mark-face mark-front"
             style={{ transform: `translateZ(${LAYER_STEP}px)` }}
           >
             <Mark className="h-full w-full" />

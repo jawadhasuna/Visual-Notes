@@ -109,7 +109,7 @@ body {
    Rest ~4.1s → hard 0.6s spin on the Y axis → 0.3s edge-light sweep.
    ------------------------------------------------------------------ */
 .mark-stage {
-  perspective: 900px;
+  perspective: 1250px;
   perspective-origin: 50% 50%;
 }
 
@@ -122,92 +122,17 @@ body {
 @keyframes markSpin {
   0%,
   74% {
-    transform: rotateY(0deg) rotateX(0deg);
+    transform: rotateY(-26deg) rotateX(9deg);
   }
   86% {
-    transform: rotateY(360deg) rotateX(0deg);
+    transform: rotateY(334deg) rotateX(9deg);
   }
   100% {
-    transform: rotateY(360deg) rotateX(0deg);
-  }
-}
-
-.mark-ring {
-  position: absolute;
-  inset: -1px;
-  border-radius: inherit;
-  padding: 1.5px;
-  background: conic-gradient(
-    from var(--shine-angle),
-    transparent 0deg,
-    transparent 286deg,
-    var(--color-teal-300) 322deg,
-    #ffffff 342deg,
-    var(--color-teal-300) 356deg,
-    transparent 360deg
-  );
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  opacity: 0;
-  pointer-events: none;
-  animation: markShine 5s linear infinite;
-}
-
-@keyframes markShine {
-  0%,
-  84% {
-    --shine-angle: 0deg;
-    opacity: 0;
-  }
-  87% {
-    opacity: 1;
-  }
-  98% {
-    --shine-angle: 720deg;
-    opacity: 1;
-  }
-  100% {
-    --shine-angle: 720deg;
-    opacity: 0;
+    transform: rotateY(334deg) rotateX(9deg);
   }
 }
 
 /* Specular sheen that rakes across the plate as it turns. */
-.mark-sheen {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  background: linear-gradient(
-    105deg,
-    transparent 32%,
-    rgba(255, 255, 255, 0.5) 47%,
-    rgba(255, 255, 255, 0.9) 51%,
-    rgba(255, 255, 255, 0.5) 55%,
-    transparent 70%
-  );
-  background-size: 260% 100%;
-  background-position: 160% 0;
-  mix-blend-mode: overlay;
-  animation: markSheen 5s cubic-bezier(0.7, 0, 0.2, 1) infinite;
-}
-
-@keyframes markSheen {
-  0%,
-  74% {
-    background-position: 160% 0;
-  }
-  86%,
-  100% {
-    background-position: -60% 0;
-  }
-}
 
 /* Extruded body: stacked faces along Z give the tile real thickness, so the
    spin reveals a solid edge instead of a flat card flipping over. */
@@ -220,32 +145,11 @@ body {
   inset: 0;
 }
 
-/* Sharp specular rim. Tight radii keep the silhouette crisp — the black
-   stroke on the artwork does the defining, this only catches the light. */
-.mark-gleam {
-  filter: drop-shadow(0 1px 0 rgba(158, 214, 230, 0.5))
-    drop-shadow(0 0 2px rgba(120, 190, 210, 0.55))
-    drop-shadow(0 0 22px rgba(46, 120, 158, 0.3));
-  animation: markGleam 5s cubic-bezier(0.4, 0, 0.3, 1) infinite;
-}
-
-@keyframes markGleam {
-  0%,
-  80% {
-    filter: drop-shadow(0 1px 0 rgba(158, 214, 230, 0.5))
-      drop-shadow(0 0 2px rgba(120, 190, 210, 0.55))
-      drop-shadow(0 0 22px rgba(46, 120, 158, 0.3));
-  }
-  88% {
-    filter: drop-shadow(0 1px 0 rgba(206, 240, 250, 0.75))
-      drop-shadow(0 0 3px rgba(158, 216, 234, 0.7))
-      drop-shadow(0 0 26px rgba(58, 140, 176, 0.38));
-  }
-  100% {
-    filter: drop-shadow(0 1px 0 rgba(158, 214, 230, 0.5))
-      drop-shadow(0 0 2px rgba(120, 190, 210, 0.55))
-      drop-shadow(0 0 22px rgba(46, 120, 158, 0.3));
-  }
+/* No glow on the mark. A tight cast shadow instead — it grounds the solid
+   and separates it from the background without adding shine. */
+.mark-front {
+  filter: drop-shadow(0 2px 1px rgba(2, 10, 20, 0.55))
+    drop-shadow(0 10px 18px rgba(2, 10, 20, 0.45));
 }
 
 /* ------------------------------------------------------------------
@@ -276,17 +180,11 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .mark-spinner,
-  .mark-gleam,
-  .mark-ring,
-  .mark-sheen,
   .steth-revolve,
   .orbit-ring,
   .orbit-ring-rev,
   .flow-line {
     animation: none;
-  }
-  .mark-ring {
-    opacity: 0.55;
   }
 }
 

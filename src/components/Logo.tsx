@@ -53,38 +53,11 @@ export function Mark({
   );
 }
 
-/**
- * The mark on its light plate.
- *
- * Brand navy is a dark colour, so it needs light ground to read. Rather than
- * recolouring the artwork on dark themes, the mark keeps its true navy and
- * carries this plate with it wherever the background may be dark.
- */
-export function MarkChip({
-  className = "",
-  markClassName = "w-9",
-}: {
-  className?: string;
-  markClassName?: string;
-}) {
-  return (
-    <span
-      className={`inline-grid shrink-0 place-items-center rounded-lg px-2 py-1.5 ${className}`}
-      style={{
-        background: "var(--mark-plate)",
-        border: "1px solid var(--mark-plate-border)",
-      }}
-    >
-      <Mark className={markClassName} />
-    </span>
-  );
-}
-
 /** Full lockup: mark + company name, as used in the site header. */
 export function Wordmark({ className = "" }: { className?: string }) {
   return (
     <span className={`flex items-center gap-3 ${className}`}>
-      <MarkChip markClassName="w-8" />
+      <Mark className="w-10 shrink-0" />
       <span className="flex flex-col leading-none">
         <span
           className="font-display text-[0.94rem] font-extrabold tracking-[0.045em] uppercase"

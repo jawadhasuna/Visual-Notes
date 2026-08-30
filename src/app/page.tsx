@@ -2,7 +2,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { Hero } from "@/components/Hero";
 import { Workspace } from "@/components/Workspace";
 import { MethodSection, ResearchSection } from "@/components/MethodSection";
-import { MarkChip } from "@/components/Logo";
+import { Mark } from "@/components/Logo";
 
 export default function Home() {
   return (
@@ -18,7 +18,7 @@ export default function Home() {
       <footer className="border-t" style={{ borderColor: "var(--border)" }}>
         <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-6 px-5 py-10 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <MarkChip markClassName="w-9" />
+            <Mark className="w-11 shrink-0" />
             <div>
               <p
                 className="font-display text-[12.5px] font-extrabold tracking-[0.045em] uppercase"
