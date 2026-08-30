@@ -22,6 +22,7 @@ export function Mark({
       className={className}
       role="img"
       aria-label={title}
+      shapeRendering="geometricPrecision"
       xmlns="http://www.w3.org/2000/svg"
     >
       <g id="mark-art">
@@ -61,13 +62,13 @@ export function Wordmark({ className = "" }: { className?: string }) {
       <span className="flex flex-col leading-none">
         <span
           className="font-display text-[0.94rem] font-extrabold tracking-[0.045em] uppercase"
-          style={{ color: "var(--text)" }}
+          style={{ color: "#ffffff" }}
         >
           New England CareFlow
         </span>
         <span
           className="mt-1 font-sans text-[0.62rem] font-medium tracking-[0.22em] uppercase"
-          style={{ color: "var(--text-dim)" }}
+          style={{ color: "#ffffff" }}
         >
           Clinical Visualization
         </span>

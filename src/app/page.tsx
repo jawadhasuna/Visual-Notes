@@ -22,7 +22,7 @@ export default function Home() {
             <div>
               <p
                 className="font-display text-[12.5px] font-extrabold tracking-[0.045em] uppercase"
-                style={{ color: "var(--text)" }}
+                style={{ color: "#ffffff" }}
               >
                 New England CareFlow LLC
               </p>
