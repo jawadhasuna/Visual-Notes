@@ -57,6 +57,13 @@
      dark to hold at 40px on this ground. The hero keeps full colour. */
   --mark-compact-ink: #ffffff;
 
+  /* Wordmark split: "New England" blue, "CareFlow" seagreen, mirroring the
+     N and C of the mark. Brand navy measures 1.34:1 on this ground and would
+     be unreadable as type, so the blue is lifted to 5.9:1. The seagreen is
+     the true brand value, which already clears at 6.8:1. */
+  --wordmark-blue: #3f96d6;
+  --wordmark-teal: #04acaf;
+
   /* Small lockups keep a light chip so the navy reads at 32px. */
   --mark-plate: #eef4f7;
   --mark-plate-border: rgba(255, 255, 255, 0.16);
