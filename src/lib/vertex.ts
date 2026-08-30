@@ -12,7 +12,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { GoogleAuth } from "google-auth-library";
 import Ajv2020 from "ajv/dist/2020.js";
-import { buildModelSchema, buildPrompt, resolveProvenance, type ResolveResult } from "./extract.ts";
+import { buildModelSchema, buildPrompt, resolveProvenance, planChunks, type ResolveResult } from "./extract.ts";
+import { emptyDoc, mergeChunk, finaliseDoc, type PartialDoc } from "./merge.ts";
 
 const PROJECT = process.env.GOOGLE_CLOUD_PROJECT ?? "";
 const LOCATION = process.env.VERTEX_LOCATION ?? "global";
@@ -50,6 +51,201 @@ export class VertexError extends Error {
   ) {
     super(message);
   }
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * Call the model, retrying only what is worth retrying.
+ *
+ * Chunked extraction fires several requests in quick succession, which makes
+ * 429 RESOURCE_EXHAUSTED an ordinary event rather than an outage — a whole
+ * admission was lost to one in testing. Backoff is exponential, and only
+ * transient statuses are retried; a 400 will fail identically next time.
+ */
+async function callModelWithRetry(
+  notes: Record<number, string>,
+  caseId: string,
+  chunk?: { index: number; total: number; noteIds: number[] },
+  attempts = 4,
+): Promise<{ doc: PartialDoc; promptTokens: number; outputTokens: number }> {
+  let last: unknown;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await callModel(notes, caseId, chunk);
+    } catch (err) {
+      last = err;
+      const status = err instanceof VertexError ? err.status : 0;
+      if (status !== 429 && status !== 503 && status !== 500) throw err;
+      if (i === attempts - 1) break;
+      await sleep(2000 * 2 ** i);
+    }
+  }
+  throw last;
+}
+
+async function callModel(
+  notes: Record<number, string>,
+  caseId: string,
+  chunk?: { index: number; total: number; noteIds: number[] },
+): Promise<{ doc: PartialDoc; promptTokens: number; outputTokens: number }> {
+  const { model } = schemas();
+  const token = await auth.getAccessToken();
+  if (!token) {
+    throw new VertexError("No Google credentials. Run: gcloud auth application-default login", 401);
+  }
+
+  const host =
+    LOCATION === "global" ? "aiplatform.googleapis.com" : `${LOCATION}-aiplatform.googleapis.com`;
+  const url =
+    `https://${host}/v1/projects/${PROJECT}/locations/${LOCATION}` +
+    `/publishers/google/models/${MODEL}:generateContent`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [{ role: "user", parts: [{ text: buildPrompt(notes, caseId, chunk) }] }],
+      generationConfig: {
+        temperature: 0,
+        responseMimeType: "application/json",
+        responseSchema: model,
+        maxOutputTokens: 32768,
+      },
+    }),
+  });
+
+  const text = await res.text();
+  if (!res.ok) {
+    let msg = text.slice(0, 400);
+    try {
+      msg = JSON.parse(text).error?.message ?? msg;
+    } catch {}
+    throw new VertexError(msg, res.status);
+  }
+
+  const body = JSON.parse(text);
+  if (body.candidates?.[0]?.finishReason === "MAX_TOKENS") {
+    throw new VertexError("The model ran out of output tokens on this chunk.", 502);
+  }
+  let doc: PartialDoc;
+  try {
+    doc = JSON.parse(body.candidates?.[0]?.content?.parts?.[0]?.text ?? "");
+  } catch {
+    throw new VertexError("The model did not return valid JSON.", 502);
+  }
+  return {
+    doc,
+    promptTokens: body.usageMetadata?.promptTokenCount ?? 0,
+    outputTokens: body.usageMetadata?.candidatesTokenCount ?? 0,
+  };
+}
+
+export type StreamEvent =
+  // ranges lets the client name the part now in flight, not just the one
+  // that finished — the plan is fixed before the first call.
+  | { type: "plan"; chunks: number; notes: number; caseId: string; ranges: [number, number][] }
+  | { type: "chunk"; index: number; total: number; firstNote: number; lastNote: number; findings: number; spansResolved: number; spansRejected: number }
+  | { type: "doc"; doc: Record<string, unknown> }
+  | { type: "done"; shapeOk: boolean; shapeErrors: string[]; spansResolved: number; spansRejected: number; usage: { promptTokens: number; outputTokens: number }; elapsedMs: number }
+  | { type: "error"; message: string };
+
+/**
+ * Extract chunk by chunk, emitting the document as it grows.
+ *
+ * Long admissions are the reason this exists: a single call over 97 notes
+ * returns a summary, and the user stares at a spinner for ten minutes. Here
+ * each chunk lands as it completes, so the chart builds in view and a failure
+ * halfway through still leaves everything before it.
+ */
+export async function* extractStreaming(
+  notes: Record<number, string>,
+  caseId: string,
+): AsyncGenerator<StreamEvent> {
+  if (!PROJECT) {
+    yield { type: "error", message: "GOOGLE_CLOUD_PROJECT is not set. See npm run check:vertex." };
+    return;
+  }
+
+  const started = Date.now();
+  const chunks = planChunks(notes);
+  const target = emptyDoc(caseId) as PartialDoc;
+  let resolvedTotal = 0;
+  let rejectedTotal = 0;
+  let promptTokens = 0;
+  let outputTokens = 0;
+
+  yield {
+    type: "plan",
+    chunks: chunks.length,
+    notes: Object.keys(notes).length,
+    caseId,
+    ranges: chunks.map((c) => [c[0], c[c.length - 1]] as [number, number]),
+  };
+
+  for (let i = 0; i < chunks.length; i++) {
+    const noteIds = chunks[i];
+
+    // The full note map is passed through so provenance can resolve against
+    // the whole admission; the prompt renders only this chunk's notes.
+    try {
+      const { doc, promptTokens: pt, outputTokens: ot } = await callModelWithRetry(
+        notes,
+        caseId,
+        chunks.length > 1 ? { index: i, total: chunks.length, noteIds } : undefined,
+      );
+      promptTokens += pt;
+      outputTokens += ot;
+
+      // Resolve against the whole admission, not just this chunk, so a quote
+      // that drifts into a neighbouring note is still located rather than lost.
+      const resolve = resolveProvenance(doc, notes);
+      resolvedTotal += resolve.resolved;
+      rejectedTotal += resolve.rejected.length;
+
+      mergeChunk(target, doc, { isFirst: i === 0, isLast: i === chunks.length - 1 });
+
+      yield {
+        type: "chunk",
+        index: i,
+        total: chunks.length,
+        firstNote: noteIds[0],
+        lastNote: noteIds[noteIds.length - 1],
+        findings: doc.findings?.length ?? 0,
+        spansResolved: resolve.resolved,
+        spansRejected: resolve.rejected.length,
+      };
+
+      const snapshot = structuredClone(target);
+      finaliseDoc(snapshot, notes);
+      yield { type: "doc", doc: snapshot as Record<string, unknown> };
+    } catch (err) {
+      // One bad chunk should not discard the rest of the admission.
+      yield {
+        type: "error",
+        message: `Part ${i + 1} of ${chunks.length} failed: ${
+          err instanceof Error ? err.message.slice(0, 200) : "unknown error"
+        }`,
+      };
+    }
+  }
+
+  finaliseDoc(target, notes);
+  const { strict } = schemas();
+  const ajv = new Ajv2020({ allErrors: true, strict: false });
+  const validate = ajv.compile(strict);
+  const shapeOk = Boolean(validate(target));
+
+  yield { type: "doc", doc: target as Record<string, unknown> };
+  yield {
+    type: "done",
+    shapeOk,
+    shapeErrors: (validate.errors ?? []).slice(0, 12).map((e) => `${e.instancePath || "/"} ${e.message}`),
+    spansResolved: resolvedTotal,
+    spansRejected: rejectedTotal,
+    usage: { promptTokens, outputTokens },
+    elapsedMs: Date.now() - started,
+  };
 }
 
 export async function extractVisualNote(

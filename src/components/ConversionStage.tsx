@@ -13,6 +13,16 @@ export const PIPELINE_STEPS = [
   "Rendering chart",
 ] as const;
 
+/** Real progress from the server, once the plan is known. */
+export type RunProgress = {
+  chunksDone: number;
+  chunksTotal: number;
+  findings: number;
+  /** Inclusive note range of the part now in flight. */
+  from: number;
+  to: number;
+};
+
 export type VerificationReport = {
   spansResolved: number;
   spansRejected: number;
@@ -29,6 +39,8 @@ export function ConversionStage({
   onReset,
   error = null,
   report = null,
+  progress = null,
+  warnings = [],
 }: {
   state: RunState;
   step: number;
@@ -37,8 +49,18 @@ export function ConversionStage({
   onReset: () => void;
   error?: string | null;
   report?: VerificationReport | null;
+  progress?: RunProgress | null;
+  warnings?: string[];
 }) {
   const running = state === "running";
+
+  // A long admission is extracted in parts, so the progress bar can report
+  // something true. A short one arrives in a single call, where the only
+  // honest thing to show is the stage labels.
+  const chunked = Boolean(progress && progress.chunksTotal > 1);
+  const pct = chunked
+    ? (progress!.chunksDone / progress!.chunksTotal) * 100
+    : ((step + 1) / PIPELINE_STEPS.length) * 100;
 
   return (
     <div className="flex flex-col items-center justify-center gap-3 px-2 py-5">
@@ -115,11 +137,13 @@ export function ConversionStage({
         {running && (
           <div className="space-y-2">
             <p
-              key={step}
+              key={chunked ? progress!.chunksDone : step}
               className="rise font-mono text-[10.5px] font-bold tracking-[0.13em] uppercase"
               style={{ color: "var(--color-teal-600)" }}
             >
-              {PIPELINE_STEPS[Math.min(step, PIPELINE_STEPS.length - 1)]}
+              {chunked
+                ? `Shifts ${progress!.from}–${progress!.to}`
+                : PIPELINE_STEPS[Math.min(step, PIPELINE_STEPS.length - 1)]}
             </p>
             <div
               className="h-1 w-full overflow-hidden rounded-full"
@@ -128,14 +152,16 @@ export function ConversionStage({
               <div
                 className="h-full rounded-full transition-[width] duration-500 ease-out"
                 style={{
-                  width: `${((step + 1) / PIPELINE_STEPS.length) * 100}%`,
+                  width: `${pct}%`,
                   background:
                     "linear-gradient(90deg, var(--color-navy-600), var(--color-teal-400))",
                 }}
               />
             </div>
             <p className="font-mono text-[9.5px]" style={{ color: "var(--text-dim)" }}>
-              step {Math.min(step + 1, PIPELINE_STEPS.length)} of {PIPELINE_STEPS.length}
+              {chunked
+                ? `part ${progress!.chunksDone + 1} of ${progress!.chunksTotal} · ${progress!.findings} findings`
+                : `step ${Math.min(step + 1, PIPELINE_STEPS.length)} of ${PIPELINE_STEPS.length}`}
             </p>
           </div>
         )}
@@ -165,7 +191,11 @@ export function ConversionStage({
                   )}
                 </p>
                 <p className="font-mono text-[9.5px]" style={{ color: "var(--text-dim)" }}>
-                  {report.coverage !== null && `${Math.round(report.coverage * 100)}% coverage · `}
+                  {/* The model grades its own coverage; measured coverage
+                      against cited spans is much lower, so the label says
+                      whose number this is. */}
+                  {report.coverage !== null &&
+                    `${Math.round(report.coverage * 100)}% self-reported coverage · `}
                   {(report.elapsedMs / 1000).toFixed(1)}s
                 </p>
               </div>
@@ -177,6 +207,31 @@ export function ConversionStage({
           </div>
         )}
       </div>
+
+      {/* Parts that failed are reported rather than hidden: the chart is real
+          but incomplete, and the user needs to know which shifts are missing. */}
+      {warnings.length > 0 && state !== "running" && (
+        <div
+          className="w-full max-w-[190px] rounded-md border px-2.5 py-2 text-left"
+          style={{
+            borderColor: "color-mix(in oklab, #e0a45c 45%, transparent)",
+            background: "color-mix(in oklab, #e0a45c 10%, transparent)",
+          }}
+        >
+          <p
+            className="font-mono text-[9.5px] font-bold tracking-[0.14em] uppercase"
+            style={{ color: "#e0a45c" }}
+          >
+            {warnings.length} part{warnings.length > 1 ? "s" : ""} incomplete
+          </p>
+          <p
+            className="mt-1 max-h-20 overflow-auto text-[10px] leading-snug"
+            style={{ color: "var(--text-dim)" }}
+          >
+            {warnings.join(" · ")}
+          </p>
+        </div>
+      )}
 
       {/* Action */}
       {state === "done" ? (

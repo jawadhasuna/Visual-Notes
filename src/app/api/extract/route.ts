@@ -1,18 +1,22 @@
 /**
- * POST /api/extract — nursing notes in, verified chart out.
+ * POST /api/extract — nursing notes in, verified chart out, streamed.
  *
  * Runs server-side so credentials never reach the browser, and so the
- * verification cannot be skipped: the response is built from the document
- * only after offsets are resolved and the strict schema has passed.
+ * verification cannot be skipped: every chart frame is built from a document
+ * whose offsets have already been resolved against the source.
+ *
+ * The response is NDJSON — one JSON event per line — because a long admission
+ * is extracted in parts and the user should see the chart build rather than a
+ * spinner. Each line is a StreamEvent from lib/vertex.
  */
 
 import { NextResponse } from "next/server";
-import { extractVisualNote, VertexError } from "@/lib/vertex.ts";
+import { extractStreaming, type StreamEvent } from "@/lib/vertex.ts";
 import { parseNotes } from "@/lib/extract.ts";
 import { toVisualNote } from "@/lib/toVisualNote.ts";
 
 export const runtime = "nodejs";
-export const maxDuration = 120;
+export const maxDuration = 800;
 
 export async function POST(request: Request) {
   let payload: { notes?: unknown; caseId?: unknown };
@@ -37,42 +41,50 @@ export async function POST(request: Request) {
       ? payload.caseId.trim()
       : (/START_OF_RECORD=([^|]+)\|/.exec(raw)?.[1] ?? "case");
 
-  try {
-    const result = await extractVisualNote(notes, caseId);
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    async start(controller) {
+      const send = (event: unknown) =>
+        controller.enqueue(encoder.encode(JSON.stringify(event) + "\n"));
 
-    // A document that fails the strict schema is not rendered. Reporting the
-    // errors is more useful than quietly drawing a partial chart.
-    if (!result.shapeOk) {
-      return NextResponse.json(
-        {
-          error: "The extracted document did not satisfy the schema.",
-          details: result.shapeErrors,
-        },
-        { status: 422 },
-      );
-    }
+      try {
+        for await (const event of extractStreaming(notes, caseId)) {
+          if (event.type === "doc") {
+            // Translate to the render shape here so the client stays a view.
+            // A partial document can fail the strict schema while still being
+            // drawable; the client is told about that at the end, not now.
+            try {
+              send({
+                type: "chart",
+                caseId,
+                chart: toVisualNote(event.doc as Parameters<typeof toVisualNote>[0]),
+                coverage: (event.doc as { coverage?: { ratio?: number } }).coverage?.ratio ?? null,
+              });
+            } catch {
+              // A frame that will not render is skipped, not fatal — the next
+              // chunk usually produces a drawable one.
+            }
+          } else {
+            send(event satisfies StreamEvent);
+          }
+        }
+      } catch (err) {
+        send({
+          type: "error",
+          fatal: true,
+          message: err instanceof Error ? err.message : "Extraction failed.",
+        });
+      } finally {
+        controller.close();
+      }
+    },
+  });
 
-    return NextResponse.json({
-      caseId,
-      chart: toVisualNote(result.doc as Parameters<typeof toVisualNote>[0]),
-      verification: {
-        spansResolved: result.resolve.resolved,
-        spansRejected: result.resolve.rejected.length,
-        rejected: result.resolve.rejected.slice(0, 10),
-        coverage: (result.doc as { coverage?: { ratio?: number } }).coverage?.ratio ?? null,
-      },
-      usage: result.usage,
-      elapsedMs: result.elapsedMs,
-      noteCount: Object.keys(notes).length,
-    });
-  } catch (err) {
-    if (err instanceof VertexError) {
-      return NextResponse.json({ error: err.message }, { status: err.status });
-    }
-    console.error("extraction failed", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Extraction failed." },
-      { status: 500 },
-    );
-  }
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "application/x-ndjson; charset=utf-8",
+      "Cache-Control": "no-store, no-transform",
+      "X-Accel-Buffering": "no",
+    },
+  });
 }

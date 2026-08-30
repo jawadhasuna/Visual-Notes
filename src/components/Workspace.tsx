@@ -2,7 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { NotesInput } from "./NotesInput";
-import { ConversionStage, PIPELINE_STEPS, type RunState } from "./ConversionStage";
+import {
+  ConversionStage,
+  PIPELINE_STEPS,
+  type RunState,
+  type RunProgress,
+} from "./ConversionStage";
 import { GraphPanel } from "./GraphPanel";
 import { SAMPLE_NOTE, type VisualNote } from "@/lib/demo";
 import { downloadChartPng } from "@/lib/exportImage";
@@ -22,6 +27,8 @@ export function Workspace() {
     elapsedMs: number;
     caseId: string;
   } | null>(null);
+  const [progress, setProgress] = useState<RunProgress | null>(null);
+  const [warnings, setWarnings] = useState<string[]>([]);
 
   const clearTimers = useCallback(() => {
     timers.current.forEach(clearTimeout);
@@ -31,16 +38,23 @@ export function Workspace() {
   useEffect(() => clearTimers, [clearTimers]);
 
   /**
-   * Real extraction. The step labels advance on a timer purely as progress
-   * feedback — the server does the work in one call and the stages are not
-   * individually observable — but the chart that lands is genuinely extracted,
-   * offset-resolved and schema-validated.
+   * Real extraction, read as a stream.
+   *
+   * A long admission is extracted in parts, and each part that lands replaces
+   * the chart with a larger one — so the trajectory builds in view instead of
+   * appearing after several minutes of spinner. A part that fails is recorded
+   * as a warning and the rest of the admission still completes.
+   *
+   * The timer-driven stage labels remain only for short cases, which arrive in
+   * a single call and have no observable intermediate state.
    */
   const run = useCallback(async () => {
     clearTimers();
     setResult(null);
     setError(null);
     setReport(null);
+    setProgress(null);
+    setWarnings([]);
     setStep(0);
     setState("running");
 
@@ -48,34 +62,129 @@ export function Workspace() {
       if (i > 0) timers.current.push(setTimeout(() => setStep(i), i * 2600));
     });
 
+    let ranges: [number, number][] = [];
+    let done = 0;
+    let findings = 0;
+    let fatal: string | null = null;
+    // The chart frames carry these; the done event carries only the tallies.
+    let charted = false;
+    let caseId = "";
+    let coverage: number | null = null;
+    const failures: string[] = [];
+
+    const apply = (event: Record<string, unknown>) => {
+      switch (event.type) {
+        case "plan": {
+          clearTimers();
+          ranges = (event.ranges ?? []) as [number, number][];
+          if (ranges.length > 1) {
+            setProgress({
+              chunksDone: 0,
+              chunksTotal: ranges.length,
+              findings: 0,
+              from: ranges[0][0],
+              to: ranges[0][1],
+            });
+          }
+          break;
+        }
+        case "chunk": {
+          done += 1;
+          findings += Number(event.findings ?? 0);
+          const next = ranges[Math.min(done, ranges.length - 1)] ?? [0, 0];
+          if (ranges.length > 1) {
+            setProgress({
+              chunksDone: done,
+              chunksTotal: ranges.length,
+              findings,
+              from: next[0],
+              to: next[1],
+            });
+          }
+          break;
+        }
+        case "chart": {
+          setResult(event.chart as VisualNote);
+          charted = true;
+          caseId = String(event.caseId ?? caseId);
+          coverage = (event.coverage as number | null) ?? coverage;
+          break;
+        }
+        case "done": {
+          setReport({
+            spansResolved: Number(event.spansResolved ?? 0),
+            spansRejected: Number(event.spansRejected ?? 0),
+            coverage,
+            elapsedMs: Number(event.elapsedMs ?? 0),
+            caseId,
+          });
+          break;
+        }
+        case "error": {
+          // A per-part failure is survivable; a fatal one is not.
+          if (event.fatal) fatal = String(event.message);
+          else failures.push(String(event.message));
+          break;
+        }
+      }
+    };
+
     try {
       const res = await fetch("/api/extract", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ notes }),
       });
-      const data = await res.json();
-      clearTimers();
 
-      if (!res.ok) {
+      if (!res.ok || !res.body) {
+        clearTimers();
+        const data = await res.json().catch(() => ({}));
         setError(
-          [data.error, ...(data.details ?? [])]
-            .filter(Boolean)
-            .join("\n")
-            .slice(0, 600) || "Extraction failed.",
+          [data.error, ...(data.details ?? [])].filter(Boolean).join("\n").slice(0, 600) ||
+            "Extraction failed.",
         );
         setState("idle");
         return;
       }
 
-      setResult(data.chart);
-      setReport({
-        spansResolved: data.verification.spansResolved,
-        spansRejected: data.verification.spansRejected,
-        coverage: data.verification.coverage,
-        elapsedMs: data.elapsedMs,
-        caseId: data.caseId,
-      });
+      // NDJSON: parse line by line, keeping the partial tail for the next read.
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      for (;;) {
+        const { value, done: finished } = await reader.read();
+        if (finished) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            apply(JSON.parse(line));
+          } catch {
+            // A truncated frame is not worth failing the run over.
+          }
+        }
+      }
+      if (buffer.trim()) {
+        try {
+          apply(JSON.parse(buffer));
+        } catch {}
+      }
+
+      clearTimers();
+      setWarnings(failures);
+
+      // Every part failing is a failed run, not a ready chart — the shell the
+      // server still emits must not be presented as a result.
+      if (fatal || !charted || (ranges.length > 0 && failures.length === ranges.length)) {
+        setResult(null);
+        setWarnings([]);
+        setError(fatal ?? (failures.join(" · ") || "Extraction produced nothing."));
+        setState("idle");
+        return;
+      }
+
       setStep(PIPELINE_STEPS.length - 1);
       setState("done");
     } catch (err) {
@@ -104,6 +213,8 @@ export function Workspace() {
     setResult(null);
     setError(null);
     setReport(null);
+    setProgress(null);
+    setWarnings([]);
   }, [clearTimers]);
 
   return (
@@ -150,6 +261,8 @@ export function Workspace() {
               onReset={reset}
               error={error}
               report={report}
+              progress={progress}
+              warnings={warnings}
             />
           </div>
         </div>

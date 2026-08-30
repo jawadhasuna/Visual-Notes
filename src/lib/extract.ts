@@ -59,11 +59,46 @@ export function buildModelSchema(strict: JsonSchema): JsonSchema {
   return vertex;
 }
 
-export function buildPrompt(notes: Record<number, string>, caseId: string): string {
-  const block = Object.entries(notes)
-    .sort((a, b) => Number(a[0]) - Number(b[0]))
-    .map(([id, body]) => `--- NOTE ${id} ---\n${body}`)
-    .join("\n\n");
+/**
+ * Split an admission into extraction units.
+ *
+ * Measured behaviour, not a guess: extraction density collapses as the input
+ * grows. Across five real cases, findings per note ran 8.0 (2 notes), 1.13
+ * (15), 0.52 (33), 0.20 (50), 0.21 (97). Given a whole long admission the
+ * model writes a summary instead of an extraction, even at temperature 0.
+ *
+ * Short admissions are left whole because they already extract well; only
+ * longer ones are chunked, which keeps the cost close to single-call
+ * extraction while fixing the collapse.
+ */
+export function planChunks(
+  notes: Record<number, string>,
+  { whole = 10, size = 4 } = {},
+): number[][] {
+  const ids = Object.keys(notes).map(Number).sort((a, b) => a - b);
+  if (ids.length <= whole) return [ids];
+  const chunks: number[][] = [];
+  for (let i = 0; i < ids.length; i += size) chunks.push(ids.slice(i, i + size));
+  return chunks;
+}
+
+export function buildPrompt(
+  notes: Record<number, string>,
+  caseId: string,
+  chunk?: { index: number; total: number; noteIds: number[] },
+): string {
+  const ids = chunk ? chunk.noteIds : Object.keys(notes).map(Number).sort((a, b) => a - b);
+  const block = ids.map((id) => `--- NOTE ${id} ---\n${notes[id]}`).join("\n\n");
+
+  const scope = chunk
+    ? `This is part ${chunk.index + 1} of ${chunk.total} of one admission. Extract ONLY
+from the notes shown below — later parts cover the rest. Do not summarise across
+the admission and do not invent shifts you cannot see. Give admission lines only
+if this part contains the admission note, and outcome lines only if it contains
+the final note; otherwise use a single short placeholder.
+
+`
+    : "";
 
   return `You are converting ICU nursing notes into a structured Visual Note.
 
@@ -89,16 +124,30 @@ from context and record the resolution in ambiguous_terms:
 
 SAFETY
 Allergies, past medical history and code status belong in the header block, not
-in a lane. Never omit an allergy. An empty allergies array means nothing was
-documented; it does not mean the patient has none.
+in a lane. Never omit an allergy.
+
+NKDA means "no known drug allergies" — it is the ABSENCE of an allergy. Never
+put NKDA, NKA or "none" in the substance field. Record it as one entry with
+status "nkda" and substance "none documented". Record a real allergy with
+status "documented", its substance, and its reaction and severity when stated
+(anaphylaxis is severity "anaphylaxis", not "unknown").
+
+An empty allergies array means nothing was documented; it does not assert the
+patient has no allergies.
 
 COVERAGE
 Count clinical sentences you accounted for and list any you did not in
 coverage.uncovered. Do not silently drop content.
 
-case_id is "${caseId}". schema_version is "1.0.0". One shift per note, in order.
+DENSITY
+Extract every distinct clinical observation, not a summary. A busy ICU shift
+usually yields several findings across different body systems. Do not collapse
+a whole shift into one line.
 
-${block}`;
+case_id is "${caseId}". schema_version is "1.0.0". The shift index for a note is
+its note number.
+
+${scope}${block}`;
 }
 
 export type ResolveResult = {
