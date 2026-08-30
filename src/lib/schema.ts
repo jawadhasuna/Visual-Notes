@@ -17,97 +17,37 @@
 
 /* ------------------------------------------------------------------ lanes -- */
 
-export const LANES = [
-  "resp",
-  "cv",
-  "neuro",
-  "gi",
-  "gu",
-  "id",
-  "endo",
-  "heme",
-  "fluids",
-  "skin",
-  "lines",
-  "pain",
-  "mobility",
-  "social",
-] as const;
+/**
+ * The taxonomy lives in schema/lanes.json so the renderer and the segmenter
+ * read the same file and cannot drift apart.
+ */
+import lanesData from "../../schema/lanes.json";
 
-export type Lane = (typeof LANES)[number];
+export const LANES = lanesData.lanes as readonly Lane[];
 
-export const LANE_LABEL: Record<Lane, string> = {
-  resp: "Respiratory",
-  cv: "Cardiovascular",
-  neuro: "Neurological",
-  gi: "Gastrointestinal",
-  gu: "Genitourinary / Renal",
-  id: "Infectious Disease",
-  endo: "Endocrine",
-  heme: "Haematology",
-  fluids: "Fluids & Electrolytes",
-  skin: "Skin & Wounds",
-  lines: "Lines & Access",
-  pain: "Pain & Comfort",
-  mobility: "Mobility & Activity",
-  social: "Social & Family",
-};
+export type Lane =
+  | "resp" | "cv" | "neuro" | "gi" | "gu" | "id" | "endo"
+  | "heme" | "fluids" | "skin" | "lines" | "pain" | "mobility" | "social";
+
+export const LANE_LABEL = lanesData.laneLabel as Record<Lane, string>;
 
 /**
  * Section headers nurses actually write, mapped onto the frozen lanes.
  *
- * Counts are notes containing that header in the 2,434-note reference corpus.
  * This is the deterministic half of segmentation: over half of all notes label
  * their own sections, so those sentences need no model to be filed correctly.
  */
-export const HEADER_ALIASES: Record<string, Lane> = {
-  // resp — 767 + pulm 107 + resp care note 69 + respiratory care 41
-  resp: "resp", pulm: "resp", pulmonary: "resp", respiratory: "resp",
-  "resp care note": "resp", "respiratory care": "resp",
-  // cv — 616 + cardiac 205
-  cv: "cv", cardiac: "cv", cardiovascular: "cv", cvs: "cv",
-  // neuro — 731
-  neuro: "neuro", neurological: "neuro", "mental status": "neuro",
-  // gi — 670
-  gi: "gi", gastrointestinal: "gi",
-  // gu — 555 + renal 55
-  gu: "gu", renal: "gu", genitourinary: "gu",
-  // id — 403
-  id: "id", "infectious disease": "id",
-  // endo — 169 + endocrine 44
-  endo: "endo", endocrine: "endo",
-  // heme — 105
-  heme: "heme", hematology: "heme", haematology: "heme",
-  // fluids
-  "f/e": "fluids", fluids: "fluids", lytes: "fluids", electrolytes: "fluids",
-  // skin — 347
-  skin: "skin", integumentary: "skin", wound: "skin",
-  // lines — access 79 + lines 40
-  access: "lines", lines: "lines", "iv access": "lines",
-  // pain — 52 + comfort 25
-  pain: "pain", comfort: "pain",
-  // mobility — activity 32
-  activity: "mobility", mobility: "mobility",
-  // social — 272 + soc 25
-  social: "social", soc: "social", family: "social",
-};
+export const HEADER_ALIASES = lanesData.headerAliases as Record<string, Lane>;
 
 /**
- * Headers that must NOT be auto-mapped.
- *
- * `gi/gu` covers two lanes at once and has to be split by content. `ms` is the
- * corpus's worst abbreviation — as a section header it is usually mental
- * status, but it can be musculoskeletal, and elsewhere in the text it means
- * morphine sulfate. Route these to a human rather than guessing.
+ * Headers that must NOT be auto-mapped — `gi/gu` spans two lanes, and `ms` is
+ * the corpus's worst abbreviation. Routed to a human rather than guessed.
  */
-export const AMBIGUOUS_HEADERS: Record<string, readonly Lane[]> = {
-  "gi/gu": ["gi", "gu"],
-  ms: ["neuro"],
-  "gu/gi": ["gu", "gi"],
-};
+export const AMBIGUOUS_HEADERS = lanesData.ambiguousHeaders as Record<string, readonly Lane[]>;
 
 /** SOAP markers — structure, not body systems. Never treat these as lanes. */
-export const SOAP_HEADERS = ["s", "o", "a", "p", "a/p", "s/o", "plan", "assess", "ros"] as const;
+export const SOAP_HEADERS = lanesData.soapHeaders as readonly string[];
+
 
 /* ----------------------------------------------------------------- types -- */
 

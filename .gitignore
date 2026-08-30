@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Segmenter output — derived from credentialed source text, never committed
+/segmented/
+*.segmented.json

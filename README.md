@@ -76,6 +76,26 @@ gate catches that. Both must pass before anything is rendered.
 computed from the note text, so it is guaranteed to satisfy the contract rather
 than merely claim to.
 
+## Segmentation
+
+Stage 1 of the pipeline, and it uses no model at all. Nurses label their own
+sections, so those sentences can be filed by string matching — deterministically,
+at zero cost, with zero variance.
+
+```bash
+npm run segment -- path/to/all_cases.txt
+```
+
+Across the 2,434-note reference corpus: **42% of all text is filed into a lane
+before any model is involved**, another 13% is SOAP structure and 1% populates
+the header block, leaving ~41% of unlabelled prose as the actual classification
+job. Ambiguous headers are held back rather than guessed — `gi/gu` spans two
+lanes (172 notes) and `ms` is the corpus's worst abbreviation (91 notes).
+
+The corpus path is an argument on purpose: credentialed source text stays
+outside this repository, and `--out` writes per-case JSON to a gitignored
+directory.
+
 ## Getting started
 
 ```bash
