@@ -30,7 +30,7 @@ const STEPS = [
 
 export function MethodSection() {
   return (
-    <section id="method" className="mx-auto w-full max-w-[1500px] px-5 py-24">
+    <section id="method" className="print-hide mx-auto w-full max-w-[1500px] px-5 py-24">
       <div className="mb-12 max-w-2xl">
         <p
           className="font-mono text-[10px] font-bold tracking-[0.24em] uppercase"
@@ -78,7 +78,7 @@ export function MethodSection() {
 
 export function ResearchSection() {
   return (
-    <section id="research" className="border-y" style={{ background: "var(--surface-2)" }}>
+    <section id="research" className="print-hide border-y" style={{ background: "var(--surface-2)" }}>
       <div className="mx-auto grid w-full max-w-[1500px] gap-10 px-5 py-20 lg:grid-cols-2">
         <div>
           <p

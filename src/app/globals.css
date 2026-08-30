@@ -343,3 +343,61 @@ textarea.notes-field::placeholder {
 .node-in {
   animation: nodeIn 0.4s cubic-bezier(0.2, 0.7, 0.3, 1) both;
 }
+
+/* ------------------------------------------------------------------
+   Print / Save as PDF — the browser's own dialog exports a real vector
+   PDF, so no rasterising library is needed. Everything but the chart is
+   dropped, and the dark palette is swapped for ink-friendly light values
+   by redefining the same tokens the components already read.
+   ------------------------------------------------------------------ */
+@page {
+  size: A4 landscape;
+  margin: 10mm;
+}
+
+@media print {
+  :root {
+    --bg: #ffffff;
+    --surface: #ffffff;
+    --surface-2: #f4f8fa;
+    --border: #cfdde6;
+    --text: #0b1b28;
+    --text-dim: #4d6474;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+  }
+
+  .print-hide,
+  header,
+  footer,
+  .steth-stage,
+  .texture-paper,
+  .texture-grain {
+    display: none !important;
+  }
+
+  #print-chart {
+    border: none !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
+
+  #print-chart .scroll-slim {
+    overflow: visible !important;
+  }
+
+  /* Keep a card, a lane header or a terminus from splitting across pages. */
+  #print-chart article,
+  #print-chart .rise {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .node-in,
+  .rise {
+    animation: none !important;
+  }
+}

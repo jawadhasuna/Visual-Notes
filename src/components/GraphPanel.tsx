@@ -105,7 +105,7 @@ export function GraphPanel({ result }: { result: VisualNote | null }) {
   if (!result) return <EmptyGraph />;
 
   return (
-    <div className="scroll-slim h-full overflow-auto p-4">
+    <div className="scroll-slim overflow-x-auto p-4">
       <div className="min-w-[660px] space-y-3">
         <Terminus lines={result.admission} tone="start" label="Admission" />
 

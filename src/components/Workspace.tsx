@@ -50,7 +50,7 @@ export function Workspace() {
 
   return (
     <section id="workspace" className="mx-auto w-full max-w-[1500px] px-5 pb-24">
-      <header className="mb-5 flex flex-wrap items-end justify-between gap-4">
+      <header className="print-hide mb-5 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p
             className="font-mono text-[10px] font-bold tracking-[0.24em] uppercase"
@@ -72,31 +72,32 @@ export function Workspace() {
       </header>
 
       <div className="flex flex-col gap-4">
-        {/* Input */}
-        <div className="panel h-[360px] overflow-hidden">
-          <NotesInput
-            value={notes}
-            onChange={setNotes}
-            onLoadSample={() => setNotes(SAMPLE_NOTE)}
-            disabled={state === "running"}
-          />
+        {/* Notes and conversion share a row; the chart gets its own full width */}
+        <div className="print-hide grid gap-4 lg:grid-cols-[minmax(0,1fr)_310px]">
+          <div className="panel h-[360px] overflow-hidden">
+            <NotesInput
+              value={notes}
+              onChange={setNotes}
+              onLoadSample={() => setNotes(SAMPLE_NOTE)}
+              disabled={state === "running"}
+            />
+          </div>
+
+          <div className="panel panel-inset overflow-hidden">
+            <ConversionStage
+              state={state}
+              step={step}
+              canRun={notes.trim().length > 0}
+              onRun={run}
+              onReset={reset}
+            />
+          </div>
         </div>
 
-        {/* Conversion */}
-        <div className="panel panel-inset overflow-hidden">
-          <ConversionStage
-            state={state}
-            step={step}
-            canRun={notes.trim().length > 0}
-            onRun={run}
-            onReset={reset}
-          />
-        </div>
-
-        {/* Output */}
-        <div className="panel h-[720px] overflow-hidden">
+        {/* Output — grows to whatever height the chart needs, never scrolls */}
+        <div id="print-chart" className="panel overflow-hidden">
           <div
-            className="flex items-center justify-between gap-3 border-b px-4 py-3"
+            className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3"
             style={{ borderColor: "var(--border)" }}
           >
             <div>
@@ -110,19 +111,36 @@ export function Workspace() {
                 Body-system lanes across the admission
               </p>
             </div>
-            {result && (
-              <span
-                className="rounded-md px-2 py-1 font-mono text-[9.5px] font-bold tracking-[0.14em] uppercase"
+            <div className="flex items-center gap-2">
+              {result && (
+                <span
+                  className="rounded-md px-2 py-1 font-mono text-[9.5px] font-bold tracking-[0.14em] uppercase"
+                  style={{
+                    color: "var(--color-teal-600)",
+                    background: "color-mix(in oklab, var(--color-teal-500) 13%, transparent)",
+                  }}
+                >
+                  synthetic case 001
+                </span>
+              )}
+              <button
+                onClick={() => window.print()}
+                disabled={!result}
+                className="print-hide flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11.5px] font-semibold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-35"
                 style={{
-                  color: "var(--color-teal-600)",
-                  background: "color-mix(in oklab, var(--color-teal-500) 13%, transparent)",
+                  background:
+                    "linear-gradient(135deg, var(--color-navy-700), var(--color-teal-600))",
                 }}
               >
-                synthetic case 001
-              </span>
-            )}
+                <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="currentColor" aria-hidden>
+                  <path d="M8 10.5 4.5 7l1-1L7.25 7.75V1.5h1.5v6.25L10.5 6l1 1L8 10.5Z" />
+                  <path d="M2.5 11v2.5h11V11H15v3a.5.5 0 0 1-.5.5h-13A.5.5 0 0 1 1 14v-3h1.5Z" />
+                </svg>
+                Download PDF
+              </button>
+            </div>
           </div>
-          <div className="h-[calc(720px-61px)]">
+          <div>
             <GraphPanel result={result} />
           </div>
         </div>

@@ -11,7 +11,7 @@ const STATS = [
 
 export function Hero() {
   return (
-    <section className="relative overflow-hidden">
+    <section className="print-hide relative overflow-hidden">
       {/* supplied plaster sheet + seamless grain */}
       <div aria-hidden className="texture-paper" />
       <div aria-hidden className="texture-grain" />
