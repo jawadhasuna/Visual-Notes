@@ -155,29 +155,29 @@ body {
    transform-box lets the CSS transform work in the SVG's own viewBox units. */
 .mark-glare-band {
   transform-box: view-box;
-  transform: translateX(0);
+  transform: translateX(-60px);
   opacity: 0;
-  animation: markGlare 7s cubic-bezier(0.35, 0, 0.25, 1) infinite;
+  animation: markGlare 7s linear infinite;
 }
 
 @keyframes markGlare {
   0%,
   89% {
-    transform: translateX(0);
+    transform: translateX(-60px);
     opacity: 0;
   }
-  90% {
+  90.5% {
     opacity: 1;
   }
-  99.5% {
-    transform: translateX(330px);
+  98% {
     opacity: 1;
   }
   100% {
-    transform: translateX(330px);
+    transform: translateX(460px);
     opacity: 0;
   }
 }
+
 
 
 

@@ -62,7 +62,7 @@ export function Mark({
           <defs>
             {/* The mark's own silhouette masks the sweep, so the highlight
                 only ever appears on the artwork — never on the background. */}
-            <mask id={`glare-mask-${uid}`}>
+            <mask id={`glare-mask-${uid}`} style={{ maskType: "alpha" }}>
               <use href={`#mark-art-${uid}`} fill="#fff" />
             </mask>
             <linearGradient id={`glare-grad-${uid}`} x1="0" y1="0" x2="1" y2="0">
