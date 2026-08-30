@@ -156,12 +156,10 @@ body {
    still facing straight ahead and still centred. */
 .text-extruded {
   text-shadow:
-    1px 1px 0 #037c80,
-    2px 2px 0 #026b70,
-    3px 3px 0 #025a60,
-    4px 4px 0 #014950,
-    5px 5px 0 #013a40,
-    6px 7px 9px rgba(1, 12, 20, 0.5);
+    1px 1px 0 #037e82,
+    2px 2px 0 #026168,
+    3px 3px 0 #01444d,
+    3px 4px 2px rgba(1, 10, 18, 0.6);
 }
 
 /* Flat lockups: plain 2D artwork, reversed to white. The hairline weave in
