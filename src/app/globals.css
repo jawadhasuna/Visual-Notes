@@ -148,20 +148,6 @@ body {
   inset: 0;
 }
 
-/* Extruded 3D type.
-   Text cannot use the stacked-layer trick the mark does — a pure-Z extrusion
-   shows no depth facing square on, and tilting a line of type to reveal it
-   would make it hard to read. So the depth is built from a ladder of offset
-   shadows stepping down-right into shadow: the classic extruded letterform,
-   still facing straight ahead and still centred. */
-.text-extruded {
-  text-shadow:
-    1px 1px 0 #037e82,
-    2px 2px 0 #026168,
-    3px 3px 0 #01444d,
-    3px 4px 2px rgba(1, 10, 18, 0.6);
-}
-
 /* Flat lockups: plain 2D artwork, reversed to white. The hairline weave in
    the artwork still separates the N from the C in monochrome. */
 .mark-compact {
