@@ -220,34 +220,27 @@ body {
   inset: 0;
 }
 
-/* The mark has no border to sweep now, so the shine beat lands as a short
-   gleam across the lit face right after the spin. */
+/* Restrained edge light. The mark should read as a solid, well-lit object —
+   a slow lift as it settles out of the spin, not a flash. */
 .mark-gleam {
-  animation: markGleam 5s linear infinite;
+  filter: drop-shadow(0 0 18px rgba(96, 178, 200, 0.28))
+    drop-shadow(0 0 3px rgba(170, 214, 226, 0.3));
+  animation: markGleam 5s cubic-bezier(0.4, 0, 0.3, 1) infinite;
 }
 
 @keyframes markGleam {
   0%,
-  85% {
-    filter: drop-shadow(0 0 10px rgba(150, 224, 236, 0.55))
-      drop-shadow(0 0 2px rgba(226, 246, 251, 0.85));
+  80% {
+    filter: drop-shadow(0 0 18px rgba(96, 178, 200, 0.28))
+      drop-shadow(0 0 3px rgba(170, 214, 226, 0.3));
   }
-  90% {
-    filter: brightness(1.3) drop-shadow(0 0 22px rgba(150, 230, 240, 0.95))
-      drop-shadow(0 0 4px rgba(240, 252, 255, 1));
+  88% {
+    filter: drop-shadow(0 0 26px rgba(118, 198, 216, 0.42))
+      drop-shadow(0 0 4px rgba(196, 230, 238, 0.42));
   }
-  97%,
   100% {
-    filter: drop-shadow(0 0 10px rgba(150, 224, 236, 0.55))
-      drop-shadow(0 0 2px rgba(226, 246, 251, 0.85));
-  }
-}
-
-/* Reduced motion still gets the standing rim light, just no pulse. */
-@media (prefers-reduced-motion: reduce) {
-  .mark-gleam {
-    filter: drop-shadow(0 0 10px rgba(150, 224, 236, 0.55))
-      drop-shadow(0 0 2px rgba(226, 246, 251, 0.85));
+    filter: drop-shadow(0 0 18px rgba(96, 178, 200, 0.28))
+      drop-shadow(0 0 3px rgba(170, 214, 226, 0.3));
   }
 }
 

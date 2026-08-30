@@ -97,10 +97,13 @@ The brand fills are **fixed** — navy `#052C52` for the `N`, seagreen `#04ACAF`
 for the `C`. The site commits to the deep navy ground (no light theme), so the
 artwork is never recoloured to suit a background.
 
-Navy needs separation from that ground. The hero mark gets it from a rim light
-(`.mark-gleam`) rather than a plate, so it floats free. The small header and
-footer lockups keep a light chip (`MarkChip`), which is what makes the navy
-legible at 32px.
+Navy needs separation from that ground. The hero mark gets it from a soft rim
+light (`.mark-gleam`) plus a wide ambient bloom rather than a plate, so it
+floats free. The small header and footer lockups keep a light chip
+(`MarkChip`), which is what makes the navy legible at 32px.
+
+The edge light is deliberately restrained — it lifts slightly as the mark
+settles out of its spin rather than flashing.
 
 Favicons are the supplied RealFaviconGenerator set: `src/app/favicon.ico` and
 `src/app/apple-icon.png` are picked up automatically by the App Router, and

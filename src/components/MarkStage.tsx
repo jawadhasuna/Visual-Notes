@@ -25,11 +25,11 @@ export function MarkStage({ size = 300 }: { size?: number }) {
         aria-hidden
         className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
         style={{
-          width: size * 1.02,
-          height: size * 0.66,
+          width: size * 1.12,
+          height: size * 0.74,
           background:
-            "radial-gradient(ellipse, rgba(126,214,222,0.30) 0%, rgba(86,178,206,0.20) 34%, rgba(12,86,140,0.14) 56%, transparent 76%)",
-          filter: "blur(20px)",
+            "radial-gradient(ellipse, rgba(104,186,204,0.17) 0%, rgba(58,132,176,0.13) 38%, rgba(10,62,112,0.09) 62%, transparent 80%)",
+          filter: "blur(30px)",
         }}
       />
 
