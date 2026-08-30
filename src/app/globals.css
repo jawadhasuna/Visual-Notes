@@ -53,10 +53,9 @@
   /* Brand fills are absolute: navy N, seagreen C, everywhere. */
   --mark-navy: #052c52;
   --mark-teal: #04acaf;
-  /* Small lockups on the dark ground: true navy measures 1.34:1 here, which
-     reads as a shadow rather than a letterform. This is the same hue lifted
-     to ~3.4:1 so the N holds at 40px. */
-  --mark-navy-compact: #2a6baf;
+  /* Small lockups reverse to a white monochrome mark — brand navy is far too
+     dark to hold at 40px on this ground. The hero keeps full colour. */
+  --mark-compact-ink: #ffffff;
 
   /* Small lockups keep a light chip so the navy reads at 32px. */
   --mark-plate: #eef4f7;
@@ -149,9 +148,11 @@ body {
   inset: 0;
 }
 
-/* Flat lockups: plain 2D artwork, lifted navy so it reads at small sizes. */
+/* Flat lockups: plain 2D artwork, reversed to white. The hairline weave in
+   the artwork still separates the N from the C in monochrome. */
 .mark-compact {
-  --mark-navy: var(--mark-navy-compact);
+  --mark-navy: var(--mark-compact-ink);
+  --mark-teal: var(--mark-compact-ink);
 }
 
 /* The hero solid sits on a cast shadow, and catches a soft glow the moment
