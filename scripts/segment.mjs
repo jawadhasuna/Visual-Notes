@@ -61,6 +61,7 @@ function classify(label) {
     return { kind: "ambiguous", candidates: lanes.ambiguousHeaders[key], key };
   }
   if (lanes.soapHeaders.includes(key)) return { kind: "soap", key };
+  if (lanes.noteTitles?.includes(key)) return { kind: "boilerplate", key };
   return { kind: "unknown", key };
 }
 
@@ -108,7 +109,7 @@ const perCase = [];
 const unknownHeaders = new Map();
 const ambiguousHits = new Map();
 const laneChars = Object.fromEntries(lanes.lanes.map((l) => [l, 0]));
-let totalChars = 0, laneTotal = 0, soapTotal = 0, unlabeledTotal = 0, headerFieldTotal = 0;
+let totalChars = 0, laneTotal = 0, soapTotal = 0, unlabeledTotal = 0, headerFieldTotal = 0, boilerplateTotal = 0;
 const headerFieldHits = new Map();
 let notesWithLanes = 0, totalNotes = 0;
 
@@ -129,6 +130,8 @@ for (const [caseId, notes] of cases) {
         laneChars[s.lane] += len; laneTotal += len; cLane += len; hasLane = true;
       } else if (s.kind === "soap") {
         soapTotal += len;
+      } else if (s.kind === "boilerplate") {
+        boilerplateTotal += len;
       } else if (s.kind === "header_field") {
         headerFieldTotal += len;
         headerFieldHits.set(s.field, (headerFieldHits.get(s.field) ?? 0) + 1);
@@ -173,6 +176,7 @@ console.log("");
 console.log(`  filed into a lane    ${pct(laneTotal)}   <- free structure, zero model error`);
 console.log(`  SOAP sections        ${pct(soapTotal)}   (S/O/A/P — structure, not a body system)`);
 console.log(`  header fields        ${pct(headerFieldTotal)}   (allergies, PMH, labs — go to the header block)`);
+console.log(`  note-title boilerplate ${pct(boilerplateTotal)} ("see flowsheet" — nothing to extract)`);
 console.log(`  unlabelled prose     ${pct(unlabeledTotal)}   <- what the LLM actually has to classify`);
 console.log("");
 console.log(`  notes with >=1 lane  ${notesWithLanes} of ${totalNotes}  (${((notesWithLanes / totalNotes) * 100).toFixed(0)}%)`);

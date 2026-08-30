@@ -82,7 +82,8 @@
     "family": "social",
     "resp. care note": "resp",
     "integ": "skin",
-    "integument": "skin"
+    "integument": "skin",
+    "end": "endo"
   },
   "aliasNotes": {
     "resp": 767,
@@ -134,12 +135,18 @@
     "assessment",
     "d",
     "dispo",
+    "e",
+    "eval",
+    "evaluation",
+    "i",
     "impression",
     "o",
     "p",
     "plan",
     "prob",
     "problem",
+    "r",
+    "response",
     "review of systems",
     "ros",
     "s",
@@ -156,5 +163,55 @@
     "labs": "labs",
     "lab": "labs",
     "hpi": "admission"
+  },
+  "noteTitles": [
+    "ccu npn",
+    "micu npn",
+    "sicu npn",
+    "nsg note",
+    "nursing note",
+    "nursing admit note",
+    "npn addendum"
+  ],
+  "ambiguousTerms": {
+    "bs": {
+      "senses": {
+        "bowel sounds": 238,
+        "breath sounds": 146,
+        "blood sugar": 78
+      },
+      "why": "Decided entirely by lane. Bowel sounds in GI, breath sounds in Resp, blood sugar in Endo."
+    },
+    "pt": {
+      "senses": {
+        "patient": null,
+        "prothrombin time": null,
+        "physical therapy": null
+      },
+      "why": "6,919 uses. Usually 'patient', but a lab value in Heme context and a therapy in Mobility."
+    },
+    "ms": {
+      "senses": {
+        "morphine sulfate": null,
+        "mental status": null,
+        "magnesium sulfate": null
+      },
+      "why": "A drug in Neuro/Pain context, an assessment as a section header."
+    },
+    "ca": {
+      "senses": {
+        "calcium": null,
+        "cancer": null,
+        "cardiac arrest": null
+      },
+      "why": "139 uses."
+    },
+    "dc": {
+      "senses": {
+        "discontinued": null,
+        "discharged": null
+      },
+      "why": "254 uses."
+    }
   }
 }
