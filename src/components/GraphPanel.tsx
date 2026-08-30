@@ -26,7 +26,7 @@ function RoutePill({ route }: { route: LaneNode["route"] }) {
 function NodeCard({ node, color, index }: { node: LaneNode; color: string; index: number }) {
   return (
     <article
-      className="node-in relative rounded-lg border p-2.5 text-left"
+      className="node-in relative flex w-full flex-col rounded-lg border p-2.5 text-left"
       style={{
         animationDelay: `${index * 55}ms`,
         borderColor: `color-mix(in oklab, ${color} 38%, transparent)`,
@@ -49,7 +49,7 @@ function NodeCard({ node, color, index }: { node: LaneNode; color: string; index
           {node.intervention}
         </p>
       )}
-      <div className="mt-1.5 flex items-center justify-between gap-2 pl-1.5">
+      <div className="mt-auto flex items-center justify-between gap-2 pt-1.5 pl-1.5">
         <span
           className="truncate font-mono text-[8.5px] tracking-wider uppercase"
           style={{ color: "var(--text-dim)" }}
@@ -131,42 +131,53 @@ export function GraphPanel({ result }: { result: VisualNote | null }) {
           ))}
         </div>
 
-        {/* Lane × shift matrix */}
+        {/* Lane × shift matrix.
+            One grid, filled shift by shift, so every cell in a shift shares a
+            row. Lanes cannot drift out of step: an absent finding still
+            occupies its cell, and each row is as tall as its tallest card. */}
         <div
           className="grid gap-x-2.5"
-          style={{ gridTemplateColumns: `repeat(${result.lanes.length}, minmax(132px, 1fr))` }}
+          style={{
+            gridTemplateColumns: `repeat(${result.lanes.length}, minmax(132px, 1fr))`,
+            gridAutoRows: "minmax(104px, auto)",
+          }}
         >
-          {result.lanes.map((lane) => (
-            <div key={lane.id} className="relative flex flex-col">
-              {/* continuous lane spine */}
-              <span
-                aria-hidden
-                className="absolute top-0 bottom-0 left-1/2 w-px -translate-x-1/2"
-                style={{
-                  background: `linear-gradient(to bottom, transparent, color-mix(in oklab, ${lane.color} 45%, transparent) 8%, color-mix(in oklab, ${lane.color} 45%, transparent) 92%, transparent)`,
-                }}
-              />
-              {SHIFTS.map((shift, i) => {
-                const node = result.nodes.find((n) => n.lane === lane.id && n.shift === shift);
-                return (
-                  <div key={shift} className="relative flex min-h-[104px] items-start py-1.5">
-                    <div className="relative w-full">
-                      {node ? (
-                        <NodeCard node={node} color={lane.color} index={i} />
-                      ) : (
-                        <div className="grid h-[88px] place-items-center">
-                          <span
-                            className="h-1.5 w-1.5 rounded-full"
-                            style={{ background: `color-mix(in oklab, ${lane.color} 45%, transparent)` }}
-                          />
-                        </div>
-                      )}
-                    </div>
+          {SHIFTS.map((shift, rowIndex) =>
+            result.lanes.map((lane) => {
+              const node = result.nodes.find(
+                (n) => n.lane === lane.id && n.shift === shift,
+              );
+              return (
+                <div
+                  key={`${lane.id}-${shift}`}
+                  className="relative flex items-stretch py-1.5"
+                >
+                  {/* lane spine — continuous because the cells abut */}
+                  <span
+                    aria-hidden
+                    className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2"
+                    style={{
+                      background: `color-mix(in oklab, ${lane.color} 38%, transparent)`,
+                    }}
+                  />
+                  <div className="relative flex w-full">
+                    {node ? (
+                      <NodeCard node={node} color={lane.color} index={rowIndex} />
+                    ) : (
+                      <div className="grid w-full place-items-center">
+                        <span
+                          className="h-1.5 w-1.5 rounded-full"
+                          style={{
+                            background: `color-mix(in oklab, ${lane.color} 55%, transparent)`,
+                          }}
+                        />
+                      </div>
+                    )}
                   </div>
-                );
-              })}
-            </div>
-          ))}
+                </div>
+              );
+            }),
+          )}
         </div>
 
         <Terminus lines={result.outcome} tone="end" label="Outcome" />

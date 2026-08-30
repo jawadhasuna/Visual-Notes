@@ -71,9 +71,9 @@ export function Workspace() {
         </p>
       </header>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(300px,0.8fr)_200px_minmax(0,2.1fr)]">
+      <div className="flex flex-col gap-4">
         {/* Input */}
-        <div className="panel h-[640px] overflow-hidden">
+        <div className="panel h-[360px] overflow-hidden">
           <NotesInput
             value={notes}
             onChange={setNotes}
@@ -83,7 +83,7 @@ export function Workspace() {
         </div>
 
         {/* Conversion */}
-        <div className="panel panel-inset h-[640px] overflow-hidden">
+        <div className="panel panel-inset overflow-hidden">
           <ConversionStage
             state={state}
             step={step}
@@ -94,7 +94,7 @@ export function Workspace() {
         </div>
 
         {/* Output */}
-        <div className="panel h-[640px] overflow-hidden">
+        <div className="panel h-[720px] overflow-hidden">
           <div
             className="flex items-center justify-between gap-3 border-b px-4 py-3"
             style={{ borderColor: "var(--border)" }}
@@ -122,7 +122,7 @@ export function Workspace() {
               </span>
             )}
           </div>
-          <div className="h-[calc(640px-61px)]">
+          <div className="h-[calc(720px-61px)]">
             <GraphPanel result={result} />
           </div>
         </div>

@@ -29,9 +29,9 @@ export function ConversionStage({
   const running = state === "running";
 
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-6 px-2 py-6">
+    <div className="flex flex-col items-center justify-center gap-3 px-2 py-5">
       {/* Flow trace: notes → core → chart */}
-      <svg viewBox="0 0 40 120" className="h-16 w-10 shrink-0" aria-hidden>
+      <svg viewBox="0 0 40 120" className="h-8 w-10 shrink-0" aria-hidden>
         <line
           x1="20"
           y1="0"
@@ -143,7 +143,7 @@ export function ConversionStage({
         </button>
       )}
 
-      <svg viewBox="0 0 40 120" className="h-16 w-10 shrink-0" aria-hidden>
+      <svg viewBox="0 0 40 120" className="h-8 w-10 shrink-0" aria-hidden>
         <line x1="20" y1="0" x2="20" y2="120" stroke="var(--border)" strokeWidth="2" />
         {running && (
           <line
