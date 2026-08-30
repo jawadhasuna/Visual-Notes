@@ -105,14 +105,14 @@ export function GraphPanel({ result }: { result: VisualNote | null }) {
   if (!result) return <EmptyGraph />;
 
   return (
-    <div className="scroll-slim h-full overflow-auto p-3">
-      <div className="min-w-[610px] space-y-3">
+    <div className="scroll-slim h-full overflow-auto p-4">
+      <div className="min-w-[660px] space-y-3">
         <Terminus lines={result.admission} tone="start" label="Admission" />
 
         {/* Lane headers */}
         <div
           className="grid gap-2.5"
-          style={{ gridTemplateColumns: `repeat(${result.lanes.length}, minmax(122px, 1fr))` }}
+          style={{ gridTemplateColumns: `repeat(${result.lanes.length}, minmax(132px, 1fr))` }}
         >
           {result.lanes.map((lane) => (
             <div
@@ -134,7 +134,7 @@ export function GraphPanel({ result }: { result: VisualNote | null }) {
         {/* Lane × shift matrix */}
         <div
           className="grid gap-x-2.5"
-          style={{ gridTemplateColumns: `repeat(${result.lanes.length}, minmax(122px, 1fr))` }}
+          style={{ gridTemplateColumns: `repeat(${result.lanes.length}, minmax(132px, 1fr))` }}
         >
           {result.lanes.map((lane) => (
             <div key={lane.id} className="relative flex flex-col">

@@ -29,7 +29,7 @@ export function ConversionStage({
   const running = state === "running";
 
   return (
-    <div className="flex h-full min-h-0 flex-1 flex-col items-center justify-center gap-5 px-2 py-5">
+    <div className="flex h-full flex-col items-center justify-center gap-6 px-2 py-6">
       {/* Flow trace: notes → core → chart */}
       <svg viewBox="0 0 40 120" className="h-16 w-10 shrink-0" aria-hidden>
         <line

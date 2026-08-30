@@ -25,13 +25,6 @@ notes.
 
 [paper]: https://preprints.jmir.org/preprint/102954
 
-## Layout
-
-One screen. The workspace is the product, so on desktop the page is pinned to
-the viewport and never scrolls — long content lives inside a panel's own
-scroll area. Below `lg` the three columns stack and the page scrolls, since
-they cannot share a phone screen.
-
 ## Status
 
 Front end only. The conversion currently runs a **timed client-side preview** of
@@ -90,6 +83,7 @@ src/
     NotesInput.tsx      notes entry (left)
     ConversionStage.tsx pipeline animation (centre)
     GraphPanel.tsx      swim-lane chart (right)
+    MethodSection.tsx   method + research sections
   lib/
     demo.ts             synthetic sample case and its structured form
 ```
