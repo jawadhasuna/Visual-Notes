@@ -10,7 +10,8 @@
     "schema:example": "node scripts/build-example.mjs",
     "schema:validate": "node scripts/validate-visual-note.mjs schema/example-synthetic-case-001.json",
     "segment": "node scripts/segment.mjs",
-    "check:vertex": "node scripts/check-vertex.mjs"
+    "check:vertex": "node scripts/check-vertex.mjs",
+    "check:schema": "node scripts/check-schema.ts"
   },
   "dependencies": {
     "next": "16.3.3",

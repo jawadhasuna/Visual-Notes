@@ -37,7 +37,6 @@ try {
   token = execFileSync("gcloud auth application-default print-access-token", {
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
-    shell: true,
   }).trim();
   if (!token) throw new Error("empty token");
 } catch {
