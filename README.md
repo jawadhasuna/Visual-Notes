@@ -42,6 +42,40 @@ API call replaces the simulated run.
 | **Cover** | Source sentences with no linked fact are fed back for a second pass, so retention is a measured percentage rather than a judgement call. |
 | **Render** | Validated JSON is drawn deterministically — same input, same chart, diff-testable. |
 
+## The schema
+
+`schema/visual-note.schema.json` is the frozen contract between extraction and
+rendering. `src/lib/schema.ts` mirrors it for the renderer, and carries the
+header-alias map used to segment notes deterministically.
+
+Two rules give the pipeline its guarantees:
+
+1. **The lane list is frozen.** Fourteen body systems, identical for every
+   case, derived from the section headers nurses actually write in the corpus.
+   A system can never be dropped because a model failed to invent a column
+   for it.
+2. **Every clinical statement carries provenance** — note id, character
+   offsets and the verbatim text. `evidence` must equal that exact slice.
+
+Header fields exist for the things the earlier prototype silently lost:
+**allergies** (with severity), **past medical history**, **code status** (which
+appears in 162 of the 2,434 reference notes), **labs** attached to findings,
+and a **coverage** block that records what was left behind.
+
+```bash
+npm run schema:validate
+```
+
+That runs two independent gates. **Shape** is JSON Schema — are the fields
+present, typed, and in the frozen lane set. **Truth** re-reads every cited span
+from the source notes and byte-compares it. Shape alone is not enough: a model
+can emit perfectly valid JSON full of invented findings, and only the second
+gate catches that. Both must pass before anything is rendered.
+
+`schema/example-synthetic-case-001.json` is a worked example whose offsets are
+computed from the note text, so it is guaranteed to satisfy the contract rather
+than merely claim to.
+
 ## Getting started
 
 ```bash

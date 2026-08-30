@@ -1,0 +1,335 @@
+{
+  "schema_version": "1.0.0",
+  "case_id": "synthetic_case_001",
+  "source": {
+    "note_count": 4,
+    "char_count": 842,
+    "corpus": "study-appendix-synthetic"
+  },
+  "header": {
+    "demographics": {
+      "age": 68,
+      "sex": "F",
+      "provenance": {
+        "note_id": 1,
+        "char_start": 0,
+        "char_end": 29,
+        "evidence": "68 yo female admitted from ED"
+      }
+    },
+    "allergies": [],
+    "past_medical_history": [],
+    "code_status": [],
+    "admission": {
+      "lines": [
+        "68F admitted from ED",
+        "Acute SOB, fever, hypotension",
+        "CXR: right lower lobe pneumonia"
+      ],
+      "provenance": {
+        "note_id": 1,
+        "char_start": 35,
+        "char_end": 91,
+        "evidence": "acute shortness of breath, fever, and low blood pressure"
+      }
+    }
+  },
+  "shifts": [
+    {
+      "index": 1,
+      "note_id": 1,
+      "label": "Shift 1",
+      "note_type": "admit"
+    },
+    {
+      "index": 2,
+      "note_id": 2,
+      "label": "Shift 2",
+      "note_type": "progress"
+    },
+    {
+      "index": 3,
+      "note_id": 3,
+      "label": "Shift 3",
+      "note_type": "progress"
+    },
+    {
+      "index": 4,
+      "note_id": 4,
+      "label": "Shift 4",
+      "note_type": "discharge"
+    }
+  ],
+  "findings": [
+    {
+      "id": "resp-1-1",
+      "lane": "resp",
+      "shift": 1,
+      "finding": "Acute shortness of breath; RLL pneumonia on CXR",
+      "intervention": "Oxygen by face mask",
+      "orders": "FACE MASK O2, CXR",
+      "route": "O2",
+      "severity": "notable",
+      "provenance": {
+        "note_id": 1,
+        "char_start": 93,
+        "char_end": 125,
+        "evidence": "CXR concerning for RLL pneumonia"
+      }
+    },
+    {
+      "id": "resp-2-1",
+      "lane": "resp",
+      "shift": 2,
+      "finding": "More tachypnoeic; rising oxygen requirement",
+      "intervention": "BiPAP started, work of breathing improved",
+      "orders": "NON-INVASIVE VENTILATION",
+      "route": "NIV",
+      "severity": "notable",
+      "provenance": {
+        "note_id": 2,
+        "char_start": 77,
+        "char_end": 124,
+        "evidence": "Placed on BiPAP with improved work of breathing"
+      }
+    },
+    {
+      "id": "resp-3-1",
+      "lane": "resp",
+      "shift": 3,
+      "finding": "Tolerated transition off BiPAP",
+      "intervention": "Weaned to nasal cannula",
+      "orders": "NASAL CANNULA",
+      "route": "O2",
+      "provenance": {
+        "note_id": 3,
+        "char_start": 8,
+        "char_end": 56,
+        "evidence": "tolerated transition from BiPAP to nasal cannula"
+      }
+    },
+    {
+      "id": "resp-4-1",
+      "lane": "resp",
+      "shift": 4,
+      "finding": "Stable on room air; denies shortness of breath",
+      "intervention": "Supplemental oxygen discontinued",
+      "orders": "ROOM AIR",
+      "route": null,
+      "provenance": {
+        "note_id": 4,
+        "char_start": 8,
+        "char_end": 54,
+        "evidence": "stable on room air, denies shortness of breath"
+      }
+    },
+    {
+      "id": "cv-1-1",
+      "lane": "cv",
+      "shift": 1,
+      "finding": "Hypotension on admission",
+      "intervention": "IV fluids and low-dose norepinephrine",
+      "orders": "IV FLUIDS, NOREPINEPHRINE GTT",
+      "route": "GTT",
+      "severity": "critical",
+      "provenance": {
+        "note_id": 1,
+        "char_start": 201,
+        "char_end": 224,
+        "evidence": "low-dose norepinephrine"
+      }
+    },
+    {
+      "id": "cv-2-1",
+      "lane": "cv",
+      "shift": 2,
+      "finding": "Blood pressure improved after fluid resuscitation",
+      "intervention": "Norepinephrine weaned off",
+      "orders": "PRESSOR DISCONTINUED",
+      "route": "GTT",
+      "provenance": {
+        "note_id": 2,
+        "char_start": 126,
+        "char_end": 184,
+        "evidence": "BP improved after fluids and norepinephrine was weaned off"
+      }
+    },
+    {
+      "id": "neuro-1-1",
+      "lane": "neuro",
+      "shift": 1,
+      "finding": "Anxious; follows commands",
+      "intervention": "Reassurance and orientation",
+      "orders": "NEURO CHECKS",
+      "route": null,
+      "provenance": {
+        "note_id": 1,
+        "char_start": 240,
+        "char_end": 276,
+        "evidence": "Patient anxious but follows commands"
+      }
+    },
+    {
+      "id": "neuro-3-1",
+      "lane": "neuro",
+      "shift": 3,
+      "finding": "Ambulated to chair with assistance",
+      "intervention": "Mobility as tolerated; eating small amounts",
+      "orders": "OUT OF BED, DIET ADVANCED",
+      "route": null,
+      "provenance": {
+        "note_id": 3,
+        "char_start": 79,
+        "char_end": 113,
+        "evidence": "Ambulated to chair with assistance"
+      }
+    },
+    {
+      "id": "neuro-4-1",
+      "lane": "neuro",
+      "shift": 4,
+      "finding": "Ambulating with walker; tolerating diet",
+      "intervention": "Discharge mobility plan",
+      "orders": "PT/OT, DISCHARGE PLANNING",
+      "route": null,
+      "provenance": {
+        "note_id": 4,
+        "char_start": 56,
+        "char_end": 95,
+        "evidence": "tolerating diet, ambulating with walker"
+      }
+    },
+    {
+      "id": "id-1-1",
+      "lane": "id",
+      "shift": 1,
+      "finding": "Febrile; right lower lobe pneumonia",
+      "intervention": "Ceftriaxone and azithromycin started",
+      "orders": "CEFTRIAXONE IV, AZITHROMYCIN IV",
+      "route": "IV",
+      "severity": "notable",
+      "provenance": {
+        "note_id": 1,
+        "char_start": 170,
+        "char_end": 195,
+        "evidence": "ceftriaxone, azithromycin"
+      }
+    },
+    {
+      "id": "id-2-1",
+      "lane": "id",
+      "shift": 2,
+      "finding": "Remains febrile",
+      "intervention": "Antibiotics continued",
+      "orders": "ANTIBIOTICS IV",
+      "route": "IV",
+      "provenance": {
+        "note_id": 2,
+        "char_start": 209,
+        "char_end": 232,
+        "evidence": "Patient remains febrile"
+      }
+    },
+    {
+      "id": "id-3-1",
+      "lane": "id",
+      "shift": 3,
+      "finding": "Afebrile this shift",
+      "intervention": "Antibiotics continued",
+      "orders": "ANTIBIOTICS IV",
+      "route": "IV",
+      "provenance": {
+        "note_id": 3,
+        "char_start": 58,
+        "char_end": 77,
+        "evidence": "Afebrile this shift"
+      }
+    },
+    {
+      "id": "id-4-1",
+      "lane": "id",
+      "shift": 4,
+      "finding": "Afebrile; infection resolving",
+      "intervention": "Transitioned to oral antibiotics",
+      "orders": "ORAL ANTIBIOTICS",
+      "route": "PO",
+      "provenance": {
+        "note_id": 4,
+        "char_start": 97,
+        "char_end": 134,
+        "evidence": "Discharged home with oral antibiotics"
+      }
+    },
+    {
+      "id": "gu-1-1",
+      "lane": "gu",
+      "shift": 1,
+      "finding": "Foley catheter placed",
+      "intervention": "Hourly urine output monitoring",
+      "orders": "FOLEY CATHETER, STRICT I&O",
+      "route": null,
+      "provenance": {
+        "note_id": 1,
+        "char_start": 226,
+        "char_end": 238,
+        "evidence": "Foley placed"
+      }
+    },
+    {
+      "id": "gu-2-1",
+      "lane": "gu",
+      "shift": 2,
+      "finding": "Urine output adequate",
+      "intervention": "Continue intake and output",
+      "orders": "STRICT I&O",
+      "route": null,
+      "provenance": {
+        "note_id": 2,
+        "char_start": 186,
+        "char_end": 207,
+        "evidence": "Urine output adequate"
+      }
+    },
+    {
+      "id": "gu-3-1",
+      "lane": "gu",
+      "shift": 3,
+      "finding": "Foley removed",
+      "intervention": "Voiding trial",
+      "orders": "FOLEY DISCONTINUED",
+      "route": null,
+      "provenance": {
+        "note_id": 3,
+        "char_start": 115,
+        "char_end": 128,
+        "evidence": "Foley removed"
+      }
+    }
+  ],
+  "outcome": {
+    "disposition": "discharged_home",
+    "lines": [
+      "Discharged home",
+      "Stable on room air, tolerating diet",
+      "Oral antibiotics, PCP follow-up"
+    ],
+    "provenance": {
+      "note_id": 4,
+      "char_start": 97,
+      "char_end": 157,
+      "evidence": "Discharged home with oral antibiotics and follow-up with PCP"
+    }
+  },
+  "coverage": {
+    "clinical_sentences": 17,
+    "covered_sentences": 16,
+    "ratio": 0.94,
+    "uncovered": [
+      {
+        "note_id": 3,
+        "text": "Eating small amounts.",
+        "classified_as": "duplicate"
+      }
+    ]
+  }
+}

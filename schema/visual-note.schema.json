@@ -1,0 +1,285 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jawadhasuna/Visual-Notes/schema/visual-note.schema.json",
+  "title": "Visual Note",
+  "description": "The frozen contract between LLM extraction and chart rendering. Every clinical statement carries provenance back to the exact characters it came from, so nothing can reach a chart that is not verifiably in the source notes.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "case_id", "source", "header", "shifts", "findings", "outcome", "coverage"],
+
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+
+    "case_id": {
+      "type": "string",
+      "description": "Patient identifier as it appears in START_OF_RECORD.",
+      "minLength": 1
+    },
+
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["note_count", "char_count"],
+      "properties": {
+        "note_count": { "type": "integer", "minimum": 1 },
+        "char_count": { "type": "integer", "minimum": 1 },
+        "corpus": { "type": "string", "default": "physionet-deid-nursing" }
+      }
+    },
+
+    "header": {
+      "description": "Admission-level facts that belong to the whole chart rather than one shift. These are the fields whose absence silently dropped content in the earlier prototype.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allergies", "past_medical_history", "code_status", "admission"],
+      "properties": {
+        "demographics": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "age": { "type": ["integer", "null"], "minimum": 0, "maximum": 120 },
+            "sex": { "enum": ["F", "M", "unknown"] },
+            "provenance": { "$ref": "#/$defs/provenance" }
+          }
+        },
+
+        "allergies": {
+          "description": "Safety-critical. An empty array asserts nothing was documented; use `status: \"nkda\"` when the notes explicitly say no known drug allergies.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["substance", "provenance"],
+            "properties": {
+              "substance": { "type": "string", "minLength": 1 },
+              "reaction": { "type": ["string", "null"] },
+              "severity": { "enum": ["anaphylaxis", "severe", "moderate", "mild", "unknown"] },
+              "status": { "enum": ["documented", "nkda"] },
+              "provenance": { "$ref": "#/$defs/provenance" }
+            }
+          }
+        },
+
+        "past_medical_history": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["text", "provenance"],
+            "properties": {
+              "text": { "type": "string", "minLength": 1 },
+              "provenance": { "$ref": "#/$defs/provenance" }
+            }
+          }
+        },
+
+        "code_status": {
+          "description": "Appears in 162 of 2434 notes in the reference corpus. Recorded as a series because it changes during an admission.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["status", "shift", "provenance"],
+            "properties": {
+              "status": { "enum": ["full_code", "dnr", "dni", "dnr_dni", "cmo", "unknown"] },
+              "shift": { "type": "integer", "minimum": 1 },
+              "provenance": { "$ref": "#/$defs/provenance" }
+            }
+          }
+        },
+
+        "admission": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["lines"],
+          "properties": {
+            "lines": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 5,
+              "items": { "type": "string", "minLength": 1 }
+            },
+            "provenance": { "$ref": "#/$defs/provenance" }
+          }
+        }
+      }
+    },
+
+    "shifts": {
+      "description": "One entry per source note, in order. The chart's rows.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["index", "note_id"],
+        "properties": {
+          "index": { "type": "integer", "minimum": 1 },
+          "note_id": { "type": "integer", "minimum": 1 },
+          "label": { "type": "string" },
+          "note_type": {
+            "enum": ["admit", "progress", "respiratory_care", "addendum", "transfer", "discharge", "unknown"]
+          }
+        }
+      }
+    },
+
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    },
+
+    "outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lines"],
+      "properties": {
+        "disposition": {
+          "enum": ["discharged_home", "transferred", "rehab", "expired", "ongoing", "unknown"]
+        },
+        "lines": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 5,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+
+    "coverage": {
+      "description": "Turns 'did we lose anything?' into a measured number instead of a judgement call.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["clinical_sentences", "covered_sentences", "ratio"],
+      "properties": {
+        "clinical_sentences": { "type": "integer", "minimum": 0 },
+        "covered_sentences": { "type": "integer", "minimum": 0 },
+        "ratio": { "type": "number", "minimum": 0, "maximum": 1 },
+        "uncovered": {
+          "description": "Source text no finding accounts for. Reviewed by a nurse, not silently discarded.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["note_id", "text"],
+            "properties": {
+              "note_id": { "type": "integer", "minimum": 1 },
+              "text": { "type": "string" },
+              "classified_as": { "enum": ["non_clinical", "duplicate", "unresolved"] }
+            }
+          }
+        }
+      }
+    }
+  },
+
+  "$defs": {
+    "lane": {
+      "description": "Frozen body-system taxonomy. Identical for every case, so any two charts are comparable. Derived from the section headers nurses actually write in the reference corpus.",
+      "enum": [
+        "resp",
+        "cv",
+        "neuro",
+        "gi",
+        "gu",
+        "id",
+        "endo",
+        "heme",
+        "fluids",
+        "skin",
+        "lines",
+        "pain",
+        "mobility",
+        "social"
+      ]
+    },
+
+    "route": {
+      "description": "How a drug or intervention was delivered. null when not applicable.",
+      "type": ["string", "null"],
+      "enum": ["IV", "GTT", "PO", "IM", "SC", "SL", "NEB", "PR", "TOPICAL", "NGT", "OGT", "PEG", "O2", "NIV", "VENT", null]
+    },
+
+    "provenance": {
+      "description": "The receipt. char_start/char_end index into the raw body of the referenced note, and `evidence` must equal that exact slice. A finding whose evidence fails a byte-comparison is rejected before rendering.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["note_id", "char_start", "char_end", "evidence"],
+      "properties": {
+        "note_id": { "type": "integer", "minimum": 1 },
+        "char_start": { "type": "integer", "minimum": 0 },
+        "char_end": { "type": "integer", "minimum": 1 },
+        "evidence": { "type": "string", "minLength": 1 }
+      }
+    },
+
+    "lab": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "value", "provenance"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "value": { "type": ["number", "string"] },
+        "unit": { "type": ["string", "null"] },
+        "flag": { "enum": ["low", "normal", "high", "critical", "unknown"] },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    },
+
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "lane", "shift", "finding", "provenance"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z]+-[0-9]+-[0-9]+$" },
+        "lane": { "$ref": "#/$defs/lane" },
+        "shift": { "type": "integer", "minimum": 1 },
+
+        "finding": {
+          "description": "What was observed. Shown as the card headline.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "intervention": {
+          "description": "What was done about it.",
+          "type": ["string", "null"],
+          "maxLength": 160
+        },
+        "orders": {
+          "description": "Equipment, drugs and orders, upper case. The card's footer line.",
+          "type": ["string", "null"],
+          "maxLength": 120
+        },
+        "route": { "$ref": "#/$defs/route" },
+
+        "labs": {
+          "description": "First-class, so values like Na 153 or K 2.9 cannot fall off the chart.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/lab" }
+        },
+
+        "severity": { "enum": ["routine", "notable", "critical"] },
+
+        "ambiguous_terms": {
+          "description": "Abbreviations resolved from context and therefore worth a human check. MS, PT, CA, DC and NS are the known offenders in this corpus.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["term", "resolved_as"],
+            "properties": {
+              "term": { "type": "string" },
+              "resolved_as": { "type": "string" },
+              "alternatives": { "type": "array", "items": { "type": "string" } },
+              "needs_review": { "type": "boolean", "default": true }
+            }
+          }
+        },
+
+        "provenance": { "$ref": "#/$defs/provenance" }
+      }
+    }
+  }
+}
