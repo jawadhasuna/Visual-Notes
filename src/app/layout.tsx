@@ -49,12 +49,15 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${outfit.variable} ${inter.variable} ${jetbrains.variable} antialiased`}
-      >
-        {children}
-      </body>
+    // The font variables must live on <html>: Tailwind v4 emits its @theme
+    // tokens (--font-sans, --font-mono, …) on :root, and those reference these
+    // next/font variables. Scoped to <body> they are out of reach from :root,
+    // which silently drops every family back to the system stack.
+    <html
+      lang="en"
+      className={`${outfit.variable} ${inter.variable} ${jetbrains.variable}`}
+    >
+      <body className="antialiased">{children}</body>
     </html>
   );
 }
