@@ -5,6 +5,7 @@ import { NotesInput } from "./NotesInput";
 import { ConversionStage, PIPELINE_STEPS, type RunState } from "./ConversionStage";
 import { GraphPanel } from "./GraphPanel";
 import { DEMO_RESULT, SAMPLE_NOTE, type VisualNote } from "@/lib/demo";
+import { downloadChartPng } from "@/lib/exportImage";
 
 export function Workspace() {
   const [notes, setNotes] = useState("");
@@ -12,6 +13,7 @@ export function Workspace() {
   const [step, setStep] = useState(0);
   const [result, setResult] = useState<VisualNote | null>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const [saving, setSaving] = useState(false);
 
   const clearTimers = useCallback(() => {
     timers.current.forEach(clearTimeout);
@@ -40,6 +42,18 @@ export function Workspace() {
       }, PIPELINE_STEPS.length * 620 + 260),
     );
   }, [clearTimers]);
+
+  const saveImage = useCallback(async () => {
+    if (!result) return;
+    setSaving(true);
+    try {
+      await downloadChartPng(result, "visual-note.png");
+    } catch (err) {
+      console.error("Chart export failed", err);
+    } finally {
+      setSaving(false);
+    }
+  }, [result]);
 
   const reset = useCallback(() => {
     clearTimers();
@@ -124,8 +138,8 @@ export function Workspace() {
                 </span>
               )}
               <button
-                onClick={() => window.print()}
-                disabled={!result}
+                onClick={saveImage}
+                disabled={!result || saving}
                 className="print-hide flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11.5px] font-semibold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-35"
                 style={{
                   background:
@@ -136,7 +150,7 @@ export function Workspace() {
                   <path d="M8 10.5 4.5 7l1-1L7.25 7.75V1.5h1.5v6.25L10.5 6l1 1L8 10.5Z" />
                   <path d="M2.5 11v2.5h11V11H15v3a.5.5 0 0 1-.5.5h-13A.5.5 0 0 1 1 14v-3h1.5Z" />
                 </svg>
-                Download PDF
+                {saving ? "Saving…" : "Download image"}
               </button>
             </div>
           </div>
