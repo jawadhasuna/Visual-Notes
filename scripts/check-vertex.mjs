@@ -16,7 +16,7 @@
  *   node scripts/check-vertex.mjs [--project ID] [--model ID]
  */
 
-import { execFileSync } from "node:child_process";
+import { execSync as execFileSync } from "node:child_process";
 
 const argv = process.argv.slice(2);
 const arg = (name, fallback) => {
@@ -32,10 +32,14 @@ const LOCATIONS = ["global", "us-central1"];
 
 let token;
 try {
-  token = execFileSync("gcloud", ["auth", "application-default", "print-access-token"], {
+  // shell:true is required on Windows, where gcloud is a .cmd batch file that
+  // execFileSync cannot invoke directly.
+  token = execFileSync("gcloud auth application-default print-access-token", {
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
+    shell: true,
   }).trim();
+  if (!token) throw new Error("empty token");
 } catch {
   console.error(`
   No Application Default Credentials found.
@@ -57,7 +61,9 @@ const probeSchema = {
   properties: {
     lane: { type: "string", enum: ["resp", "cv", "neuro", "gi", "gu"] },
     finding: { type: "string" },
-    route: { type: ["string", "null"], enum: ["IV", "PO", "O2", null] },
+    // Vertex follows OpenAPI, not raw JSON Schema: union types like
+    // ["string","null"] are rejected — nullability is a separate flag.
+    route: { type: "string", nullable: true, enum: ["IV", "PO", "O2"] },
     provenance: {
       type: "object",
       properties: {
