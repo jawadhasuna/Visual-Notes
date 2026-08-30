@@ -3,8 +3,8 @@
 import steth from "../../public/brand/stethoscope.png";
 
 /** Copies stacked along Z so the instrument has thickness as it turns. */
-const DEPTH_LAYERS = 12;
-const LAYER_STEP = 5;
+const DEPTH_LAYERS = 7;
+const LAYER_STEP = 2.6;
 
 /**
  * Stethoscope backdrop — the brand instrument, extruded and revolving slowly
@@ -21,7 +21,7 @@ export function StethoscopeBackdrop() {
       className="steth-stage pointer-events-none absolute inset-0 overflow-hidden select-none"
     >
       <div
-        className="absolute top-1/2 left-1/2 h-[min(120vh,940px)] w-[min(120vh,940px)] -translate-x-1/2 -translate-y-1/2"
+        className="absolute top-1/2 left-1/2 h-[min(94vh,720px)] w-[min(94vh,720px)] -translate-x-1/2 -translate-y-1/2"
         style={{ opacity: "var(--steth-opacity)" }}
       >
         <div className="steth-revolve mark-solid relative h-full w-full">
@@ -34,7 +34,7 @@ export function StethoscopeBackdrop() {
                 className="steth-layer"
                 style={{
                   transform: `translateZ(${-i * LAYER_STEP}px)`,
-                  filter: `brightness(${(1 - t * 0.55).toFixed(3)}) saturate(${(
+                  filter: `brightness(${(1 - t * 0.5).toFixed(3)}) saturate(${(
                     1 - t * 0.25
                   ).toFixed(3)})`,
                 }}

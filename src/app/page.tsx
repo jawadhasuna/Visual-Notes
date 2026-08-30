@@ -18,7 +18,7 @@ export default function Home() {
       <footer className="border-t" style={{ borderColor: "var(--border)" }}>
         <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-6 px-5 py-10 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <Mark className="w-11 shrink-0" />
+            <Mark className="mark-compact w-11 shrink-0" />
             <div>
               <p
                 className="font-display text-[12.5px] font-extrabold tracking-[0.045em] uppercase"

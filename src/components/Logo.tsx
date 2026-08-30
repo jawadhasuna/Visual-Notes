@@ -57,7 +57,7 @@ export function Mark({
 export function Wordmark({ className = "" }: { className?: string }) {
   return (
     <span className={`flex items-center gap-3 ${className}`}>
-      <Mark className="w-10 shrink-0" />
+      <Mark className="mark-compact w-10 shrink-0" />
       <span className="flex flex-col leading-none">
         <span
           className="font-display text-[0.94rem] font-extrabold tracking-[0.045em] uppercase"
