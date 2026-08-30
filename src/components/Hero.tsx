@@ -32,7 +32,7 @@ export function Hero() {
         <MarkStage size={320} />
 
         <p
-          className="font-mono mt-3 text-[13px] font-extrabold tracking-[0.3em] uppercase"
+          className="text-extruded font-mono mt-3 text-[17px] font-extrabold tracking-[0.26em] uppercase"
           style={{ color: "var(--color-teal-600)" }}
         >
           New England CareFlow LLC
