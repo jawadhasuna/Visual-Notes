@@ -220,27 +220,31 @@ body {
   inset: 0;
 }
 
-/* Restrained edge light. The mark should read as a solid, well-lit object —
-   a slow lift as it settles out of the spin, not a flash. */
+/* Sharp specular rim. Tight radii keep the silhouette crisp — the black
+   stroke on the artwork does the defining, this only catches the light. */
 .mark-gleam {
-  filter: drop-shadow(0 0 18px rgba(96, 178, 200, 0.28))
-    drop-shadow(0 0 3px rgba(170, 214, 226, 0.3));
+  filter: drop-shadow(0 1px 0 rgba(158, 214, 230, 0.5))
+    drop-shadow(0 0 2px rgba(120, 190, 210, 0.55))
+    drop-shadow(0 0 22px rgba(46, 120, 158, 0.3));
   animation: markGleam 5s cubic-bezier(0.4, 0, 0.3, 1) infinite;
 }
 
 @keyframes markGleam {
   0%,
   80% {
-    filter: drop-shadow(0 0 18px rgba(96, 178, 200, 0.28))
-      drop-shadow(0 0 3px rgba(170, 214, 226, 0.3));
+    filter: drop-shadow(0 1px 0 rgba(158, 214, 230, 0.5))
+      drop-shadow(0 0 2px rgba(120, 190, 210, 0.55))
+      drop-shadow(0 0 22px rgba(46, 120, 158, 0.3));
   }
   88% {
-    filter: drop-shadow(0 0 26px rgba(118, 198, 216, 0.42))
-      drop-shadow(0 0 4px rgba(196, 230, 238, 0.42));
+    filter: drop-shadow(0 1px 0 rgba(206, 240, 250, 0.75))
+      drop-shadow(0 0 3px rgba(158, 216, 234, 0.7))
+      drop-shadow(0 0 26px rgba(58, 140, 176, 0.38));
   }
   100% {
-    filter: drop-shadow(0 0 18px rgba(96, 178, 200, 0.28))
-      drop-shadow(0 0 3px rgba(170, 214, 226, 0.3));
+    filter: drop-shadow(0 1px 0 rgba(158, 214, 230, 0.5))
+      drop-shadow(0 0 2px rgba(120, 190, 210, 0.55))
+      drop-shadow(0 0 22px rgba(46, 120, 158, 0.3));
   }
 }
 
