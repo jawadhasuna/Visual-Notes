@@ -43,3 +43,7 @@ next-env.d.ts
 # Segmenter output — derived from credentialed source text, never committed
 /segmented/
 *.segmented.json
+
+# Local credentials — never committed
+.env.local
+.env*.local

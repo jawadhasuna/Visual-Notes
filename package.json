@@ -9,7 +9,8 @@
     "lint": "eslint",
     "schema:example": "node scripts/build-example.mjs",
     "schema:validate": "node scripts/validate-visual-note.mjs schema/example-synthetic-case-001.json",
-    "segment": "node scripts/segment.mjs"
+    "segment": "node scripts/segment.mjs",
+    "check:vertex": "node scripts/check-vertex.mjs"
   },
   "dependencies": {
     "next": "16.3.3",
