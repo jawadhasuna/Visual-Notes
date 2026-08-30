@@ -1,5 +1,7 @@
 "use client";
 
+import { useId } from "react";
+
 /**
  * New England CareFlow mark — the official corporate artwork.
  *
@@ -12,10 +14,14 @@
 export function Mark({
   className = "",
   title = "New England CareFlow",
+  glare = false,
 }: {
   className?: string;
   title?: string;
+  /** Sweep a specular band across the artwork, timed to the hero revolve. */
+  glare?: boolean;
 }) {
+  const uid = useId().replace(/:/g, "");
   return (
     <svg
       viewBox="265.1 350 221.2 136.6"
@@ -25,7 +31,7 @@ export function Mark({
       shapeRendering="geometricPrecision"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <g id="mark-art">
+      <g id={`mark-art-${uid}`}>
         {/* Seagreen — upper binaural arc */}
         <path
           fill="var(--mark-teal)"
@@ -50,6 +56,36 @@ export function Mark({
           d="M 379.821 406.317 C 378.443 407.717 375.377 408.217 376.558 410.717 C 379.019 415.717 374.216 417.602 367.818 417.602 C 363.684 417.602 368.796 423.717 377.36 433.717 C 387.499 445.517 395.078 451.817 403.544 455.317 C 408.958 457.617 411.911 458.117 421.164 458.517 C 431.007 458.917 433.173 458.617 440.457 456.317 C 453.745 452.117 469.333 439.138 467.758 434.138 C 466.971 431.538 459.061 434.017 456.403 435.817 C 445.083 443.117 435.24 445.717 425.593 443.717 C 414.175 441.317 407.973 436.517 393.208 418.717 C 386.81 411.017 381.593 404.717 381.494 404.717 C 381.494 404.717 376.874 403.859 375.988 404.759"
         />
       </g>
+
+      {glare && (
+        <>
+          <defs>
+            {/* The mark's own silhouette masks the sweep, so the highlight
+                only ever appears on the artwork — never on the background. */}
+            <mask id={`glare-mask-${uid}`}>
+              <use href={`#mark-art-${uid}`} fill="#fff" />
+            </mask>
+            <linearGradient id={`glare-grad-${uid}`} x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#fff" stopOpacity="0" />
+              <stop offset="45%" stopColor="#fff" stopOpacity="0.55" />
+              <stop offset="55%" stopColor="#fff" stopOpacity="0.9" />
+              <stop offset="100%" stopColor="#fff" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <g mask={`url(#glare-mask-${uid})`}>
+            <g transform="rotate(-16 375 418)">
+              <rect
+                className="mark-glare-band"
+                x="180"
+                y="300"
+                width="54"
+                height="240"
+                fill={`url(#glare-grad-${uid})`}
+              />
+            </g>
+          </g>
+        </>
+      )}
     </svg>
   );
 }

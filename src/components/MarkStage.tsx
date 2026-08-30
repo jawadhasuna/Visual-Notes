@@ -55,7 +55,7 @@ export function MarkStage({ size = 320 }: { size?: number }) {
             className="mark-face mark-front"
             style={{ transform: `translateZ(${LAYER_STEP}px)` }}
           >
-            <Mark className="h-full w-full" />
+            <Mark className="h-full w-full" glare />
           </span>
         </div>
       </div>

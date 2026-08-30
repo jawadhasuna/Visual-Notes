@@ -143,6 +143,34 @@ body {
   transform-style: preserve-3d;
 }
 
+/* Specular glare raking across the mark as it settles out of the revolve.
+   transform-box lets the CSS transform work in the SVG's own viewBox units. */
+.mark-glare-band {
+  transform-box: view-box;
+  transform: translateX(0);
+  opacity: 0;
+  animation: markGlare 5s cubic-bezier(0.35, 0, 0.25, 1) infinite;
+}
+
+@keyframes markGlare {
+  0%,
+  85% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  88% {
+    opacity: 1;
+  }
+  99% {
+    transform: translateX(330px);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(330px);
+    opacity: 0;
+  }
+}
+
 .mark-face {
   position: absolute;
   inset: 0;
@@ -170,11 +198,11 @@ body {
 
 @keyframes markLand {
   0%,
-  85.5% {
+  84% {
     filter: brightness(1) drop-shadow(0 2px 1px rgba(2, 10, 20, 0.55))
       drop-shadow(0 10px 18px rgba(2, 10, 20, 0.45));
   }
-  86.5% {
+  89% {
     filter: brightness(1.16) drop-shadow(0 2px 1px rgba(2, 10, 20, 0.55))
       drop-shadow(0 0 9px rgba(226, 244, 250, 0.42))
       drop-shadow(0 0 24px rgba(140, 205, 226, 0.3));
@@ -226,6 +254,7 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .mark-spinner,
   .mark-front,
+  .mark-glare-band,
   .steth-revolve,
   .orbit-ring,
   .orbit-ring-rev,
