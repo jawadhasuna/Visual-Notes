@@ -7,7 +7,13 @@
  * this repository, and none should ever be committed to it.
  */
 
-export type LaneId = "resp" | "hem" | "neuro" | "id" | "gu";
+/**
+ * Render-side lane id. Widened from the demo's five to the frozen fourteen,
+ * so a real extraction can use any lane the schema allows.
+ */
+export type LaneId =
+  | "resp" | "cv" | "neuro" | "gi" | "gu" | "id" | "endo"
+  | "heme" | "fluids" | "skin" | "lines" | "pain" | "mobility" | "social";
 
 export type Lane = {
   id: LaneId;
@@ -17,7 +23,9 @@ export type Lane = {
   color: string;
 };
 
-export type Route = "IV" | "PO" | "NEB" | "GTT" | "O2" | "NIV" | null;
+export type Route =
+  | "IV" | "GTT" | "PO" | "IM" | "SC" | "SL" | "NEB" | "PR"
+  | "TOPICAL" | "NGT" | "OGT" | "PEG" | "O2" | "NIV" | "VENT" | null;
 
 export type LaneNode = {
   lane: LaneId;
@@ -26,18 +34,23 @@ export type LaneNode = {
   intervention?: string;
   orders?: string;
   route?: Route;
+  /** The verbatim source text this card came from, for provenance display. */
+  evidence?: string;
 };
 
 export type VisualNote = {
   admission: string[];
   outcome: string[];
   lanes: Lane[];
+  /** Real admissions are not four shifts long; the chart reads this. */
+  shifts: number[];
   nodes: LaneNode[];
+  allergies?: string[];
 };
 
 export const LANES: Lane[] = [
   { id: "resp", label: "Respiratory", abbr: "Resp", color: "#d9556e" },
-  { id: "hem", label: "Hemodynamic", abbr: "Hem", color: "#dd8a3a" },
+  { id: "cv", label: "Cardiovascular", abbr: "CV", color: "#E08A3C" },
   { id: "neuro", label: "Neurological", abbr: "Neuro", color: "#8b6fd1" },
   { id: "id", label: "Infectious Disease", abbr: "ID", color: "#2fa86b" },
   { id: "gu", label: "Genitourinary", abbr: "GU", color: "#3b8fd4" },
@@ -71,6 +84,7 @@ export const DEMO_RESULT: VisualNote = {
     "Oral antibiotics, PCP follow-up",
   ],
   lanes: LANES,
+  shifts: [1, 2, 3, 4],
   nodes: [
     // Respiratory
     {
@@ -108,7 +122,7 @@ export const DEMO_RESULT: VisualNote = {
 
     // Hemodynamic
     {
-      lane: "hem",
+      lane: "cv",
       shift: 1,
       finding: "Hypotension on admission",
       intervention: "IV fluids and low-dose norepinephrine",
@@ -116,7 +130,7 @@ export const DEMO_RESULT: VisualNote = {
       route: "GTT",
     },
     {
-      lane: "hem",
+      lane: "cv",
       shift: 2,
       finding: "Blood pressure improved after fluid resuscitation",
       intervention: "Norepinephrine weaned off",

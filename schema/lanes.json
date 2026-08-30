@@ -213,5 +213,37 @@
       },
       "why": "254 uses."
     }
+  },
+  "laneColor": {
+    "resp": "#E0607E",
+    "cv": "#E08A3C",
+    "neuro": "#9B72E0",
+    "gi": "#34B37A",
+    "gu": "#3E93DB",
+    "id": "#E05C5C",
+    "endo": "#D9B036",
+    "heme": "#C0576B",
+    "fluids": "#3FB6C4",
+    "skin": "#C98A5E",
+    "lines": "#7F8DA6",
+    "pain": "#E0729E",
+    "mobility": "#6FBF52",
+    "social": "#8A97A8"
+  },
+  "laneAbbr": {
+    "resp": "Resp",
+    "cv": "CV",
+    "neuro": "Neuro",
+    "gi": "GI",
+    "gu": "GU",
+    "id": "ID",
+    "endo": "Endo",
+    "heme": "Heme",
+    "fluids": "F/E",
+    "skin": "Skin",
+    "lines": "Lines",
+    "pain": "Pain",
+    "mobility": "Mobility",
+    "social": "Social"
   }
 }

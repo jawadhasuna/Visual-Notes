@@ -1,6 +1,6 @@
 "use client";
 
-import { SHIFTS, type LaneNode, type VisualNote } from "@/lib/demo";
+import { type LaneNode, type VisualNote } from "@/lib/demo";
 
 function RoutePill({ route }: { route: LaneNode["route"] }) {
   if (!route) return null;
@@ -142,7 +142,7 @@ export function GraphPanel({ result }: { result: VisualNote | null }) {
             gridAutoRows: "minmax(104px, auto)",
           }}
         >
-          {SHIFTS.map((shift, rowIndex) =>
+          {result.shifts.map((shift, rowIndex) =>
             result.lanes.map((lane) => {
               const node = result.nodes.find(
                 (n) => n.lane === lane.id && n.shift === shift,

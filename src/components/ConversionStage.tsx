@@ -13,18 +13,30 @@ export const PIPELINE_STEPS = [
   "Rendering chart",
 ] as const;
 
+export type VerificationReport = {
+  spansResolved: number;
+  spansRejected: number;
+  coverage: number | null;
+  elapsedMs: number;
+  caseId: string;
+};
+
 export function ConversionStage({
   state,
   step,
   canRun,
   onRun,
   onReset,
+  error = null,
+  report = null,
 }: {
   state: RunState;
   step: number;
   canRun: boolean;
   onRun: () => void;
   onReset: () => void;
+  error?: string | null;
+  report?: VerificationReport | null;
 }) {
   const running = state === "running";
 
@@ -71,10 +83,33 @@ export function ConversionStage({
 
       {/* Status */}
       <div className="min-h-[74px] w-full max-w-[190px] text-center">
-        {state === "idle" && (
+        {state === "idle" && !error && (
           <p className="text-[12px] leading-relaxed" style={{ color: "var(--text-dim)" }}>
             Ready to convert. Paste a case, then run the pipeline.
           </p>
+        )}
+
+        {state === "idle" && error && (
+          <div
+            className="rise rounded-md border px-2.5 py-2 text-left"
+            style={{
+              borderColor: "color-mix(in oklab, #e05c5c 45%, transparent)",
+              background: "color-mix(in oklab, #e05c5c 10%, transparent)",
+            }}
+          >
+            <p
+              className="font-mono text-[9.5px] font-bold tracking-[0.14em] uppercase"
+              style={{ color: "#e58080" }}
+            >
+              Extraction failed
+            </p>
+            <p
+              className="mt-1 max-h-24 overflow-auto text-[10.5px] leading-snug whitespace-pre-wrap"
+              style={{ color: "var(--text-dim)" }}
+            >
+              {error}
+            </p>
+          </div>
         )}
 
         {running && (
@@ -113,9 +148,32 @@ export function ConversionStage({
             >
               Chart ready
             </p>
-            <p className="text-[11.5px] leading-relaxed" style={{ color: "var(--text-dim)" }}>
-              5 lanes · 16 findings · every item linked to its source span
-            </p>
+            {report ? (
+              <div className="space-y-1">
+                <p className="text-[11.5px] leading-snug" style={{ color: "var(--text-dim)" }}>
+                  <span style={{ color: "var(--color-teal-400)" }}>
+                    {report.spansResolved}
+                  </span>{" "}
+                  spans verified against the source
+                  {report.spansRejected > 0 && (
+                    <>
+                      {" · "}
+                      <span style={{ color: "#e58080" }}>
+                        {report.spansRejected} rejected
+                      </span>
+                    </>
+                  )}
+                </p>
+                <p className="font-mono text-[9.5px]" style={{ color: "var(--text-dim)" }}>
+                  {report.coverage !== null && `${Math.round(report.coverage * 100)}% coverage · `}
+                  {(report.elapsedMs / 1000).toFixed(1)}s
+                </p>
+              </div>
+            ) : (
+              <p className="text-[11.5px] leading-relaxed" style={{ color: "var(--text-dim)" }}>
+                Every item linked to its source span
+              </p>
+            )}
           </div>
         )}
       </div>

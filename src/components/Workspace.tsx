@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { NotesInput } from "./NotesInput";
 import { ConversionStage, PIPELINE_STEPS, type RunState } from "./ConversionStage";
 import { GraphPanel } from "./GraphPanel";
-import { DEMO_RESULT, SAMPLE_NOTE, type VisualNote } from "@/lib/demo";
+import { SAMPLE_NOTE, type VisualNote } from "@/lib/demo";
 import { downloadChartPng } from "@/lib/exportImage";
 
 export function Workspace() {
@@ -14,6 +14,14 @@ export function Workspace() {
   const [result, setResult] = useState<VisualNote | null>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [report, setReport] = useState<{
+    spansResolved: number;
+    spansRejected: number;
+    coverage: number | null;
+    elapsedMs: number;
+    caseId: string;
+  } | null>(null);
 
   const clearTimers = useCallback(() => {
     timers.current.forEach(clearTimeout);
@@ -23,25 +31,59 @@ export function Workspace() {
   useEffect(() => clearTimers, [clearTimers]);
 
   /**
-   * Front-end preview of the pipeline. The real implementation will call
-   * the extraction API and stream these same stages back.
+   * Real extraction. The step labels advance on a timer purely as progress
+   * feedback — the server does the work in one call and the stages are not
+   * individually observable — but the chart that lands is genuinely extracted,
+   * offset-resolved and schema-validated.
    */
-  const run = useCallback(() => {
+  const run = useCallback(async () => {
     clearTimers();
     setResult(null);
+    setError(null);
+    setReport(null);
     setStep(0);
     setState("running");
 
     PIPELINE_STEPS.forEach((_, i) => {
-      timers.current.push(setTimeout(() => setStep(i), i * 620));
+      if (i > 0) timers.current.push(setTimeout(() => setStep(i), i * 2600));
     });
-    timers.current.push(
-      setTimeout(() => {
-        setResult(DEMO_RESULT);
-        setState("done");
-      }, PIPELINE_STEPS.length * 620 + 260),
-    );
-  }, [clearTimers]);
+
+    try {
+      const res = await fetch("/api/extract", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notes }),
+      });
+      const data = await res.json();
+      clearTimers();
+
+      if (!res.ok) {
+        setError(
+          [data.error, ...(data.details ?? [])]
+            .filter(Boolean)
+            .join("\n")
+            .slice(0, 600) || "Extraction failed.",
+        );
+        setState("idle");
+        return;
+      }
+
+      setResult(data.chart);
+      setReport({
+        spansResolved: data.verification.spansResolved,
+        spansRejected: data.verification.spansRejected,
+        coverage: data.verification.coverage,
+        elapsedMs: data.elapsedMs,
+        caseId: data.caseId,
+      });
+      setStep(PIPELINE_STEPS.length - 1);
+      setState("done");
+    } catch (err) {
+      clearTimers();
+      setError(err instanceof Error ? err.message : "Extraction failed.");
+      setState("idle");
+    }
+  }, [clearTimers, notes]);
 
   const saveImage = useCallback(async () => {
     if (!result) return;
@@ -60,6 +102,8 @@ export function Workspace() {
     setState("idle");
     setStep(0);
     setResult(null);
+    setError(null);
+    setReport(null);
   }, [clearTimers]);
 
   return (
@@ -104,6 +148,8 @@ export function Workspace() {
               canRun={notes.trim().length > 0}
               onRun={run}
               onReset={reset}
+              error={error}
+              report={report}
             />
           </div>
         </div>
@@ -134,7 +180,7 @@ export function Workspace() {
                     background: "color-mix(in oklab, var(--color-teal-500) 13%, transparent)",
                   }}
                 >
-                  synthetic case 001
+                  {report?.caseId ?? "case"}
                 </span>
               )}
               <button
