@@ -3,8 +3,8 @@
 import { Mark } from "./Logo";
 
 /** Copies of the artwork stacked along Z to give the strokes real depth. */
-const DEPTH_LAYERS = 30;
-const LAYER_STEP = 1.5;
+const DEPTH_LAYERS = 16;
+const LAYER_STEP = 1.25;
 
 /**
  * Hero mark: the corporate artwork extruded into a solid — no plate, no glow,
