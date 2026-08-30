@@ -14,8 +14,8 @@ import { execSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import Ajv2020 from "ajv/dist/2020.js";
-import { toVertexSchema, findVertexProblems } from "../src/lib/vertexSchema.ts";
-import { buildModelSchema, buildPrompt, resolveProvenance, parseNotes } from "../src/lib/extract.ts";
+import { findVertexProblems } from "../src/lib/vertexSchema.ts";
+import { buildModelSchema, buildPrompt, resolveProvenance } from "../src/lib/extract.ts";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const strict = JSON.parse(readFileSync(join(root, "schema/visual-note.schema.json"), "utf8"));
@@ -54,10 +54,6 @@ for (const m of sample.matchAll(
 )) {
   notes[Number(m[1])] = m[2];
 }
-
-const noteBlock = Object.entries(notes)
-  .map(([id, body]) => `--- NOTE ${id} ---\n${body}`)
-  .join("\n\n");
 
 const prompt = buildPrompt(notes, "synthetic_case_001");
 
@@ -103,7 +99,7 @@ console.log(
 
 /* ------------------------------------------------- 3. validate the output - */
 
-let doc: Record<string, unknown> | null = null;
+let doc: Record<string, unknown>;
 try {
   doc = JSON.parse(raw);
 } catch {
@@ -129,6 +125,13 @@ if (!shapeOk) {
 }
 
 type Prov = { note_id: number; char_start: number; char_end: number; evidence: string };
+type Cited = { provenance?: Prov };
+type Doc = {
+  findings?: (Cited & { id?: string; lane?: string })[];
+  header?: { allergies?: Cited[]; admission?: Cited };
+  outcome?: Cited;
+  coverage?: { ratio?: number };
+};
 const failures: string[] = [];
 let checked = 0;
 const check = (p: Prov | undefined, path: string) => {
@@ -144,9 +147,9 @@ const check = (p: Prov | undefined, path: string) => {
   }
 };
 
-const d = doc as any;
-(d.findings ?? []).forEach((f: any, i: number) => check(f.provenance, `findings[${i}] ${f.id}`));
-(d.header?.allergies ?? []).forEach((a: any, i: number) => check(a.provenance, `allergies[${i}]`));
+const d = doc as Doc;
+(d.findings ?? []).forEach((f, i) => check(f.provenance, `findings[${i}] ${f.id}`));
+(d.header?.allergies ?? []).forEach((a, i) => check(a.provenance, `allergies[${i}]`));
 check(d.header?.admission?.provenance, "admission");
 check(d.outcome?.provenance, "outcome");
 
@@ -155,7 +158,7 @@ for (const f of failures.slice(0, 6)) console.log(`       ${f}`);
 
 console.log(`
      findings   ${(d.findings ?? []).length}
-     lanes      ${[...new Set((d.findings ?? []).map((f: any) => f.lane))].join(", ")}
+     lanes      ${[...new Set((d.findings ?? []).map((f) => f.lane))].join(", ")}
      coverage   ${((d.coverage?.ratio ?? 0) * 100).toFixed(0)}%
      verbatim   ${checked - failures.length}/${checked} spans matched the source
 `);

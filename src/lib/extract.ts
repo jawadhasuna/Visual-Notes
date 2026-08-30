@@ -114,8 +114,25 @@ export type ResolveResult = {
  * because models reflow line breaks inside quotes; the stored evidence is
  * always the real source slice, never the model's version of it.
  */
+/** Loose shapes: the model's output is untrusted until this pass verifies it. */
+type LooseProvenance = {
+  note_id?: unknown;
+  evidence?: unknown;
+  char_start?: number;
+  char_end?: number;
+};
+type LooseCited = { provenance?: LooseProvenance };
+type LooseDoc = {
+  findings?: (LooseCited & { id?: string; labs?: (LooseCited & { name?: string })[] })[];
+  header?: Record<string, unknown> & {
+    admission?: LooseCited;
+    demographics?: LooseCited;
+  };
+  outcome?: LooseCited;
+};
+
 export function resolveProvenance(
-  doc: any,
+  doc: LooseDoc,
   notes: Record<number, string>,
 ): ResolveResult {
   const rejected: ResolveResult["rejected"] = [];
@@ -142,9 +159,14 @@ export function resolveProvenance(
     return [start, end];
   };
 
-  const fix = (p: any, path: string): boolean => {
+  const fix = (p: LooseProvenance | undefined, path: string): boolean => {
     if (!p || typeof p.evidence !== "string" || typeof p.note_id !== "number") {
-      rejected.push({ path, note_id: p?.note_id ?? -1, evidence: p?.evidence ?? "", reason: "malformed provenance" });
+      rejected.push({
+        path,
+        note_id: typeof p?.note_id === "number" ? p.note_id : -1,
+        evidence: typeof p?.evidence === "string" ? p.evidence : "",
+        reason: "malformed provenance",
+      });
       return false;
     }
     const body = notes[p.note_id];
@@ -157,19 +179,20 @@ export function resolveProvenance(
       rejected.push({ path, note_id: p.note_id, evidence: p.evidence, reason: "quote not found in note" });
       return false;
     }
-    p.char_start = span[0];
-    p.char_end = span[1];
+    const prov = p as { char_start: number; char_end: number; evidence: string };
+    prov.char_start = span[0];
+    prov.char_end = span[1];
     // Store the real slice, so evidence always equals the source byte for byte.
-    p.evidence = body.slice(span[0], span[1]);
+    prov.evidence = body.slice(span[0], span[1]);
     resolved++;
     return true;
   };
 
   if (Array.isArray(doc.findings)) {
-    doc.findings = doc.findings.filter((f: any, i: number) => {
+    doc.findings = doc.findings.filter((f, i) => {
       const ok = fix(f.provenance, `findings[${i}] ${f.id ?? ""}`);
       if (ok && Array.isArray(f.labs)) {
-        f.labs = f.labs.filter((l: any, j: number) =>
+        f.labs = f.labs.filter((l, j) =>
           fix(l.provenance, `findings[${i}].labs[${j}] ${l.name ?? ""}`),
         );
       }
@@ -177,15 +200,22 @@ export function resolveProvenance(
     });
   }
 
-  const h = doc.header ?? {};
-  for (const key of ["allergies", "past_medical_history", "code_status"] as const) {
-    if (Array.isArray(h[key])) {
-      h[key] = h[key].filter((x: any, i: number) => fix(x.provenance, `header.${key}[${i}]`));
+  const h = doc.header;
+  if (h) {
+    for (const key of ["allergies", "past_medical_history", "code_status"] as const) {
+      const list = h[key];
+      if (Array.isArray(list)) {
+        h[key] = (list as LooseCited[]).filter((x, i) =>
+          fix(x.provenance, `header.${key}[${i}]`),
+        );
+      }
     }
-  }
-  if (h.admission?.provenance) fix(h.admission.provenance, "header.admission");
-  if (h.demographics?.provenance) {
-    if (!fix(h.demographics.provenance, "header.demographics")) delete h.demographics.provenance;
+    if (h.admission?.provenance) fix(h.admission.provenance, "header.admission");
+    if (h.demographics?.provenance) {
+      if (!fix(h.demographics.provenance, "header.demographics")) {
+        delete h.demographics.provenance;
+      }
+    }
   }
   if (doc.outcome?.provenance) {
     if (!fix(doc.outcome.provenance, "outcome")) delete doc.outcome.provenance;
