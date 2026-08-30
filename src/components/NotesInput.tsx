@@ -15,7 +15,7 @@ export function NotesInput({
   const words = value.trim() ? value.trim().split(/\s+/).length : 0;
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full min-h-0 flex-1 flex-col">
       {/* Header */}
       <div
         className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b px-4 py-3"

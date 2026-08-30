@@ -1,59 +1,44 @@
 import { SiteHeader } from "@/components/SiteHeader";
 import { Hero } from "@/components/Hero";
 import { Workspace } from "@/components/Workspace";
-import { MethodSection, ResearchSection } from "@/components/MethodSection";
-import { Mark } from "@/components/Logo";
+import { StethoscopeBackdrop } from "@/components/StethoscopeBackdrop";
 
+/**
+ * Single screen. The workspace is the product, so on desktop the page is
+ * pinned to the viewport and never scrolls — anything long lives inside a
+ * panel's own scroll area. Below `lg` the columns stack and the page is
+ * allowed to scroll, since three panels cannot share one phone screen.
+ */
 export default function Home() {
   return (
-    <>
-      <SiteHeader />
-      <main>
+    <div className="relative flex min-h-dvh flex-col lg:h-dvh lg:overflow-hidden">
+      <div aria-hidden className="texture-paper" />
+      <div aria-hidden className="texture-grain" />
+      <StethoscopeBackdrop />
+
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        <SiteHeader />
         <Hero />
         <Workspace />
-        <MethodSection />
-        <ResearchSection />
-      </main>
 
-      <footer className="border-t" style={{ borderColor: "var(--border)" }}>
-        <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-6 px-5 py-10 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <Mark className="mark-compact w-11 shrink-0" />
-            <div>
-              <p
-                className="font-display text-[12.5px] font-extrabold tracking-[0.045em] uppercase"
-                style={{ color: "#ffffff" }}
-              >
-                New England CareFlow LLC
-              </p>
-              <p className="mt-0.5 text-[11px]" style={{ color: "var(--text-dim)" }}>
-                Research and prototype development · not clinical decision support
-              </p>
-            </div>
-          </div>
-          <div className="max-w-md space-y-1.5">
-            <p
-              className="text-[10.5px] leading-relaxed"
-              style={{ color: "var(--text-dim)" }}
+        <footer
+          className="shrink-0 border-t px-5 py-2.5 text-center"
+          style={{ borderColor: "var(--border)" }}
+        >
+          <p className="text-[10.5px]" style={{ color: "var(--text-dim)" }}>
+            Research prototype · synthetic sample data · not for clinical use ·
+            stethoscope by{" "}
+            <a
+              href="https://www.vecteezy.com"
+              target="_blank"
+              rel="noreferrer noopener"
+              className="underline underline-offset-2 hover:opacity-80"
             >
-              Sample content shown here is synthetic and published for
-              illustration only. No credentialed patient data is stored in or
-              served from this application.
-            </p>
-            <p className="text-[10.5px]" style={{ color: "var(--text-dim)" }}>
-              Stethoscope illustration by{" "}
-              <a
-                href="https://www.vecteezy.com"
-                target="_blank"
-                rel="noreferrer noopener"
-                className="underline underline-offset-2 hover:opacity-80"
-              >
-                Vecteezy.com
-              </a>
-            </p>
-          </div>
-        </div>
-      </footer>
-    </>
+              Vecteezy.com
+            </a>
+          </p>
+        </footer>
+      </div>
+    </div>
   );
 }

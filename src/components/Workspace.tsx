@@ -21,8 +21,8 @@ export function Workspace() {
   useEffect(() => clearTimers, [clearTimers]);
 
   /**
-   * Front-end preview of the pipeline. The real implementation will call
-   * the extraction API and stream these same stages back.
+   * Front-end preview of the pipeline. The real implementation will call the
+   * extraction API and stream these same stages back.
    */
   const run = useCallback(() => {
     clearTimers();
@@ -49,31 +49,13 @@ export function Workspace() {
   }, [clearTimers]);
 
   return (
-    <section id="workspace" className="mx-auto w-full max-w-[1500px] px-5 pb-24">
-      <header className="mb-5 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p
-            className="font-mono text-[10px] font-bold tracking-[0.24em] uppercase"
-            style={{ color: "var(--color-teal-600)" }}
-          >
-            Workspace
-          </p>
-          <h2
-            className="font-display mt-1.5 text-2xl font-extrabold tracking-tight"
-            style={{ color: "var(--text)" }}
-          >
-            Notes in, chart out
-          </h2>
-        </div>
-        <p className="max-w-md text-[12.5px] leading-relaxed" style={{ color: "var(--text-dim)" }}>
-          Narrative shift notes are segmented by body system, extracted to a
-          schema, checked for coverage, then drawn as a swim-lane trajectory.
-        </p>
-      </header>
-
-      <div className="grid gap-4 xl:grid-cols-[minmax(300px,0.8fr)_200px_minmax(0,2.1fr)]">
+    <section
+      id="workspace"
+      className="relative mx-auto flex w-full max-w-[1500px] min-h-0 flex-1 px-5 pb-4"
+    >
+      <div className="grid min-h-0 w-full flex-1 gap-4 xl:grid-cols-[minmax(290px,0.78fr)_196px_minmax(0,2.1fr)]">
         {/* Input */}
-        <div className="panel h-[640px] overflow-hidden">
+        <div className="panel flex min-h-[420px] flex-col overflow-hidden xl:min-h-0">
           <NotesInput
             value={notes}
             onChange={setNotes}
@@ -83,7 +65,7 @@ export function Workspace() {
         </div>
 
         {/* Conversion */}
-        <div className="panel panel-inset h-[640px] overflow-hidden">
+        <div className="panel panel-inset flex min-h-[300px] flex-col overflow-hidden xl:min-h-0">
           <ConversionStage
             state={state}
             step={step}
@@ -94,27 +76,22 @@ export function Workspace() {
         </div>
 
         {/* Output */}
-        <div className="panel h-[640px] overflow-hidden">
+        <div className="panel flex min-h-[460px] flex-col overflow-hidden xl:min-h-0">
           <div
-            className="flex items-center justify-between gap-3 border-b px-4 py-3"
+            className="flex shrink-0 items-center justify-between gap-3 border-b px-4 py-2.5"
             style={{ borderColor: "var(--border)" }}
           >
-            <div>
-              <h2
-                className="font-display text-[13px] font-bold tracking-wide"
-                style={{ color: "var(--text)" }}
-              >
-                Visual note
-              </h2>
-              <p className="mt-0.5 text-[11px]" style={{ color: "var(--text-dim)" }}>
-                Body-system lanes across the admission
-              </p>
-            </div>
+            <h2
+              className="font-display text-[13px] font-bold tracking-wide"
+              style={{ color: "var(--text)" }}
+            >
+              Visual note
+            </h2>
             {result && (
               <span
                 className="rounded-md px-2 py-1 font-mono text-[9.5px] font-bold tracking-[0.14em] uppercase"
                 style={{
-                  color: "var(--color-teal-600)",
+                  color: "var(--color-teal-400)",
                   background: "color-mix(in oklab, var(--color-teal-500) 13%, transparent)",
                 }}
               >
@@ -122,7 +99,7 @@ export function Workspace() {
               </span>
             )}
           </div>
-          <div className="h-[calc(640px-61px)]">
+          <div className="min-h-0 flex-1">
             <GraphPanel result={result} />
           </div>
         </div>
