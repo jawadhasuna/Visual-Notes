@@ -21,7 +21,7 @@
  * The taxonomy lives in schema/lanes.json so the renderer and the segmenter
  * read the same file and cannot drift apart.
  */
-import lanesData from "../../schema/lanes.json";
+import lanesData from "../../schema/lanes.json" with { type: "json" };
 
 export const LANES = lanesData.lanes as readonly Lane[];
 

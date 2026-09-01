@@ -10,7 +10,7 @@
  * and the shift list (real admissions are not four shifts long).
  */
 
-import lanesData from "../../schema/lanes.json";
+import lanesData from "../../schema/lanes.json" with { type: "json" };
 import type { LaneId, VisualNote } from "./demo.ts";
 
 type Cited = { note_id: number; char_start: number; char_end: number; evidence: string };
