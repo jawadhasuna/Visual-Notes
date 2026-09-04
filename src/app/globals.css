@@ -64,6 +64,18 @@
   --wordmark-blue: #3f96d6;
   --wordmark-teal: #01acaf;
 
+  /* The top bar is reversed to white so the mark can carry its true colours.
+     Everything that sits on it needs its own value: the dark-ground versions
+     were picked to read against navy and would be near-invisible here. */
+  --header-bg: #ffffff;
+  --header-border: #dbe6ec;
+  --header-nav: #3d5766;
+  --header-tagline: #587483;   /* 4.95:1 on white; #63808f fell just under */
+  --header-wordmark-blue: #012850;
+  /* Type needs 4.5:1 where a graphic needs 3:1, so the word is a shade deeper
+     than the artwork it sits beside. The mark itself stays exact. */
+  --header-wordmark-teal: #017b7e;
+
   /* Small lockups keep a light chip so the navy reads at 32px. */
   --mark-plate: #eef4f7;
   --mark-plate-border: rgba(255, 255, 255, 0.16);
@@ -186,9 +198,9 @@ body {
   inset: 0;
 }
 
-/* Flat lockups: plain 2D artwork in the full brand colours, matching the
-   hero. Kept as its own rule so the small lockup can be treated differently
-   again if the navy proves too dark against the header. */
+/* Flat lockups: plain 2D artwork in the full brand colours. These sit on the
+   white bar, where the navy is the strongest thing on the page rather than the
+   weakest, so no reversal or lightening is needed. */
 .mark-compact {
   --mark-navy: #012850;
   --mark-teal: #01acaf;

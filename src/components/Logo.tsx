@@ -100,12 +100,12 @@ export function Wordmark({ className = "" }: { className?: string }) {
       <Mark className="w-10 shrink-0" />
       <span className="flex flex-col leading-none">
         <span className="font-display text-[0.94rem] font-extrabold tracking-[0.045em] uppercase">
-          <span style={{ color: "var(--wordmark-blue)" }}>New England</span>{" "}
-          <span style={{ color: "var(--wordmark-teal)" }}>CareFlow</span>
+          <span style={{ color: "var(--header-wordmark-blue)" }}>New England</span>{" "}
+          <span style={{ color: "var(--header-wordmark-teal)" }}>CareFlow</span>
         </span>
         <span
           className="mt-1 font-sans text-[0.62rem] font-medium tracking-[0.22em] uppercase"
-          style={{ color: "#ffffff" }}
+          style={{ color: "var(--header-tagline)" }}
         >
           Clinical Visualization
         </span>
