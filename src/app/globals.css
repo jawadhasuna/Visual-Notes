@@ -69,8 +69,10 @@
      were picked to read against navy and would be near-invisible here. */
   --header-bg: #ffffff;
   --header-border: #dbe6ec;
-  --header-nav: #3d5766;
-  --header-tagline: #587483;   /* 4.95:1 on white; #63808f fell just under */
+  --header-nav: #012850;
+  /* A lighter step in the same blue family: distinct from the navy above it
+     and from the seagreen beside it, and 5.8:1 on white. */
+  --header-tagline: #3c6a86;
   --header-wordmark-blue: #012850;
   /* Type needs 4.5:1 where a graphic needs 3:1, so the word is a shade deeper
      than the artwork it sits beside. The mark itself stays exact. */
@@ -198,12 +200,13 @@ body {
   inset: 0;
 }
 
-/* Flat lockups: plain 2D artwork in the full brand colours. These sit on the
-   white bar, where the navy is the strongest thing on the page rather than the
-   weakest, so no reversal or lightening is needed. */
+/* The footer lockup, and only that: it sits on the dark ground where brand
+   navy measures 1.3:1 and vanishes, so the mark reverses to solid white. The
+   header lockup is a separate case -- it sits on the white bar and keeps full
+   colour. */
 .mark-compact {
-  --mark-navy: #012850;
-  --mark-teal: #01acaf;
+  --mark-navy: var(--mark-compact-ink);
+  --mark-teal: var(--mark-compact-ink);
 }
 
 /* The hero solid sits on a cast shadow — shadow reads as solidity. No

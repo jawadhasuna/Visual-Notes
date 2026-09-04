@@ -25,7 +25,7 @@ export function SiteHeader() {
             <a
               key={n.href}
               href={n.href}
-              className="text-[12.5px] font-semibold transition-colors hover:opacity-70"
+              className="text-[12.5px] font-bold transition-colors hover:opacity-70"
               style={{ color: "var(--header-nav)" }}
             >
               {n.label}
