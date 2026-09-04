@@ -104,7 +104,7 @@ export function Wordmark({ className = "" }: { className?: string }) {
           <span style={{ color: "var(--header-wordmark-teal)" }}>CareFlow</span>
         </span>
         <span
-          className="mt-1 font-sans text-[0.62rem] font-medium tracking-[0.22em] uppercase"
+          className="mt-1 font-sans text-[0.62rem] font-bold tracking-[0.22em] uppercase"
           style={{ color: "var(--header-tagline)" }}
         >
           Clinical Visualization
