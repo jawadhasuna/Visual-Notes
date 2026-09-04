@@ -3,17 +3,21 @@
  *
  * Authentication has to work in two places that offer different things.
  *
- * Locally there is a gcloud login, so Application Default Credentials resolve
- * on their own and nothing needs configuring. On a serverless host there is no
- * gcloud and no metadata server, so ADC finds nothing and every request fails
- * with "no credentials" — which is exactly what a first deploy does. There the
- * credentials arrive as a service-account key held in an environment variable
- * and injected by the host at runtime.
+ * Locally there is a gcloud login, so Application Default Credentials resolve on
+ * their own and nothing needs configuring. A serverless host has no gcloud and
+ * no metadata server, so ADC finds nothing and every request fails.
  *
- * Preferring the environment variable when it is present means the same code
- * runs in both places, and the key itself never touches the repository.
+ * The obvious remedy -- a service-account key in an environment variable -- is
+ * not available on this organisation: Google's "secure by default" policy
+ * (iam.disableServiceAccountKeyCreation) blocks issuing one, and the account
+ * cannot grant itself an exemption. What the project does have is a Vertex AI
+ * Express API key, so that is what the deployed site uses.
  *
- * Server-only — never import from a client component.
+ * Both routes reach the same model and both honour a response schema, so
+ * extraction behaves identically either way. The service-account path is kept
+ * because it costs nothing and works anywhere the policy permits it.
+ *
+ * Server-only -- never import from a client component.
  */
 
 import { readFileSync } from "node:fs";
@@ -95,11 +99,14 @@ export type ExtractionResult = {
 };
 
 export class VertexError extends Error {
-  constructor(
-    message: string,
-    readonly status: number,
-  ) {
+  // Assigned in the body rather than declared as a constructor parameter
+  // property: Node's type-stripping loader rejects that syntax, and the scripts
+  // import this module directly so that they and the app share one client.
+  readonly status: number;
+
+  constructor(message: string, status: number) {
     super(message);
+    this.status = status;
   }
 }
 
@@ -108,21 +115,72 @@ export class VertexError extends Error {
  * on a serverless host to run a gcloud command sends them somewhere they cannot
  * go, which is what the first version of this did.
  */
-const CREDENTIAL_HELP = process.env.GOOGLE_SERVICE_ACCOUNT_KEY
-  ? "Google rejected the service-account key. Check that the key is valid and " +
-    "that the account has the Vertex AI User role on this project."
+const CREDENTIAL_HELP = process.env.VERTEX_API_KEY
+  ? "Google rejected the API key. Check that it is valid, unexpired, and not " +
+    "restricted away from the Vertex AI API."
   : process.env.VERCEL
-    ? "No Google credentials on the server. Add GOOGLE_SERVICE_ACCOUNT_KEY to " +
-      "the project's environment variables and redeploy."
+    ? "No Google credentials on the server. Add VERTEX_API_KEY to the project's " +
+      "environment variables and redeploy."
     : "No Google credentials. Run: gcloud auth application-default login";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /**
+ * Where to send the request, and how to prove who we are.
+ *
+ * Two authentication routes exist because the deployment host cannot use the
+ * one that works locally. A gcloud login gives an OAuth token and addresses the
+ * model through the project and location. A serverless host has no gcloud, and
+ * on this organisation a service-account key cannot be issued either -- Google's
+ * "secure by default" org policy blocks their creation outright. What the
+ * project does have is a Vertex AI Express API key, which authenticates with a
+ * header and addresses the model directly, without a project or location in the
+ * path.
+ *
+ * Both routes reach the same model and both accept a response schema, so the
+ * extraction behaves identically either way; only the address and the header
+ * differ. Verified against gemini-3.7-flash before this was written.
+ */
+async function endpoint(): Promise<{ url: string; headers: Record<string, string> }> {
+  const json = { "Content-Type": "application/json" };
+  const apiKey = process.env.VERTEX_API_KEY?.trim();
+
+  if (apiKey) {
+    return {
+      url:
+        "https://aiplatform.googleapis.com/v1/publishers/google/models/" +
+        `${MODEL}:generateContent`,
+      headers: { ...json, "x-goog-api-key": apiKey },
+    };
+  }
+
+  // getAccessToken throws rather than returning null when no credentials can be
+  // found at all, so both outcomes have to be funnelled to the same message --
+  // otherwise a deployed host leaks Google's own "could not load the default
+  // credentials" text, which tells the reader nothing about how to fix it here.
+  let token: string | null | undefined;
+  try {
+    token = await getAuth().getAccessToken();
+  } catch {
+    throw new VertexError(CREDENTIAL_HELP, 401);
+  }
+  if (!token) throw new VertexError(CREDENTIAL_HELP, 401);
+
+  const host =
+    LOCATION === "global" ? "aiplatform.googleapis.com" : `${LOCATION}-aiplatform.googleapis.com`;
+  return {
+    url:
+      `https://${host}/v1/projects/${PROJECT}/locations/${LOCATION}` +
+      `/publishers/google/models/${MODEL}:generateContent`,
+    headers: { ...json, Authorization: `Bearer ${token}` },
+  };
+}
+
+/**
  * Call the model, retrying only what is worth retrying.
  *
  * Chunked extraction fires several requests in quick succession, which makes
- * 429 RESOURCE_EXHAUSTED an ordinary event rather than an outage — a whole
+ * 429 RESOURCE_EXHAUSTED an ordinary event rather than an outage -- a whole
  * admission was lost to one in testing. Backoff is exponential, and only
  * transient statuses are retried; a 400 will fail identically next time.
  */
@@ -153,27 +211,11 @@ async function callModel(
   chunk?: { index: number; total: number; noteIds: number[] },
 ): Promise<{ doc: PartialDoc; promptTokens: number; outputTokens: number }> {
   const { model } = schemas();
-  // getAccessToken throws rather than returning null when no credentials can be
-  // found at all, so both outcomes have to be funnelled to the same message --
-  // otherwise a deployed host leaks Google's own "could not load the default
-  // credentials" text, which tells the reader nothing about how to fix it here.
-  let token: string | null | undefined;
-  try {
-    token = await getAuth().getAccessToken();
-  } catch {
-    throw new VertexError(CREDENTIAL_HELP, 401);
-  }
-  if (!token) throw new VertexError(CREDENTIAL_HELP, 401);
-
-  const host =
-    LOCATION === "global" ? "aiplatform.googleapis.com" : `${LOCATION}-aiplatform.googleapis.com`;
-  const url =
-    `https://${host}/v1/projects/${PROJECT}/locations/${LOCATION}` +
-    `/publishers/google/models/${MODEL}:generateContent`;
+  const { url, headers } = await endpoint();
 
   const res = await fetch(url, {
     method: "POST",
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify({
       contents: [{ role: "user", parts: [{ text: buildPrompt(notes, caseId, chunk) }] }],
       generationConfig: {
@@ -232,8 +274,13 @@ export async function* extractStreaming(
   notes: Record<number, string>,
   caseId: string,
 ): AsyncGenerator<StreamEvent> {
-  if (!PROJECT) {
-    yield { type: "error", message: "GOOGLE_CLOUD_PROJECT is not set. See npm run check:vertex." };
+  if (!PROJECT && !process.env.VERTEX_API_KEY) {
+    yield {
+      type: "error",
+      message:
+        "Neither VERTEX_API_KEY nor GOOGLE_CLOUD_PROJECT is set. The API-key " +
+        "endpoint needs no project; the gcloud route needs one.",
+    };
     return;
   }
 
@@ -322,38 +369,21 @@ export async function extractVisualNote(
   notes: Record<number, string>,
   caseId: string,
 ): Promise<ExtractionResult> {
-  if (!PROJECT) {
+  if (!PROJECT && !process.env.VERTEX_API_KEY) {
     throw new VertexError(
-      "GOOGLE_CLOUD_PROJECT is not set. Add it to .env.local (see npm run check:vertex).",
+      "Neither VERTEX_API_KEY nor GOOGLE_CLOUD_PROJECT is set. The API-key " +
+        "endpoint needs no project; the gcloud route needs one.",
       500,
     );
   }
 
   const { strict, model } = schemas();
-  // getAccessToken throws rather than returning null when no credentials can be
-  // found at all, so both outcomes have to be funnelled to the same message --
-  // otherwise a deployed host leaks Google's own "could not load the default
-  // credentials" text, which tells the reader nothing about how to fix it here.
-  let token: string | null | undefined;
-  try {
-    token = await getAuth().getAccessToken();
-  } catch {
-    throw new VertexError(CREDENTIAL_HELP, 401);
-  }
-  if (!token) throw new VertexError(CREDENTIAL_HELP, 401);
-
-  const host =
-    LOCATION === "global"
-      ? "aiplatform.googleapis.com"
-      : `${LOCATION}-aiplatform.googleapis.com`;
-  const url =
-    `https://${host}/v1/projects/${PROJECT}/locations/${LOCATION}` +
-    `/publishers/google/models/${MODEL}:generateContent`;
+  const { url, headers } = await endpoint();
 
   const started = Date.now();
   const res = await fetch(url, {
     method: "POST",
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify({
       contents: [{ role: "user", parts: [{ text: buildPrompt(notes, caseId) }] }],
       generationConfig: {
