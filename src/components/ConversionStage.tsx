@@ -41,6 +41,7 @@ export function ConversionStage({
   report = null,
   progress = null,
   warnings = [],
+  truncation = null,
 }: {
   state: RunState;
   step: number;
@@ -51,6 +52,8 @@ export function ConversionStage({
   report?: VerificationReport | null;
   progress?: RunProgress | null;
   warnings?: string[];
+  /** Set when the chart covers only part of the admission. */
+  truncation?: string | null;
 }) {
   const running = state === "running";
 
@@ -170,9 +173,9 @@ export function ConversionStage({
           <div className="rise space-y-1.5">
             <p
               className="font-mono text-[10.5px] font-bold tracking-[0.13em] uppercase"
-              style={{ color: "var(--color-teal-600)" }}
+              style={{ color: truncation ? "#e0a45c" : "var(--color-teal-600)" }}
             >
-              Chart ready
+              {truncation ? "Partial chart" : "Chart ready"}
             </p>
             {report ? (
               <div className="space-y-1">
@@ -207,6 +210,26 @@ export function ConversionStage({
           </div>
         )}
       </div>
+
+      {truncation && state === "done" && (
+        <div
+          className="w-full max-w-[190px] rounded-md border px-2.5 py-2 text-left"
+          style={{
+            borderColor: "color-mix(in oklab, #e0a45c 55%, transparent)",
+            background: "color-mix(in oklab, #e0a45c 12%, transparent)",
+          }}
+        >
+          <p
+            className="font-mono text-[9.5px] font-bold tracking-[0.14em] uppercase"
+            style={{ color: "#e0a45c" }}
+          >
+            Incomplete
+          </p>
+          <p className="mt-1 text-[10px] leading-snug" style={{ color: "var(--text-dim)" }}>
+            {truncation}
+          </p>
+        </div>
+      )}
 
       {/* Parts that failed are reported rather than hidden: the chart is real
           but incomplete, and the user needs to know which shifts are missing. */}

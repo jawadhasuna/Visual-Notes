@@ -259,7 +259,20 @@ export type StreamEvent =
   | { type: "plan"; chunks: number; notes: number; caseId: string; ranges: [number, number][] }
   | { type: "chunk"; index: number; total: number; firstNote: number; lastNote: number; findings: number; spansResolved: number; spansRejected: number }
   | { type: "doc"; doc: Record<string, unknown> }
-  | { type: "done"; shapeOk: boolean; shapeErrors: string[]; spansResolved: number; spansRejected: number; usage: { promptTokens: number; outputTokens: number }; elapsedMs: number }
+  | {
+      type: "done";
+      shapeOk: boolean;
+      shapeErrors: string[];
+      spansResolved: number;
+      spansRejected: number;
+      usage: { promptTokens: number; outputTokens: number };
+      elapsedMs: number;
+      // Set when the run stopped early to stay inside the host's time limit.
+      truncated: boolean;
+      partsDone: number;
+      partsTotal: number;
+      lastShift: number;
+    }
   | { type: "error"; message: string };
 
 /**
@@ -300,7 +313,19 @@ export async function* extractStreaming(
     ranges: chunks.map((c) => [c[0], c[c.length - 1]] as [number, number]),
   };
 
+  // Leave headroom under the host's limit: one more part takes about thirty
+  // seconds, and finalising and validating the document takes a moment more.
+  // Overrunning is not a slow response, it is a killed connection with no
+  // closing event, so the margin is deliberately generous.
+  const BUDGET_MS = Number(process.env.EXTRACT_BUDGET_MS ?? 240_000);
+  let truncated = false;
+  let partsDone = 0;
+
   for (let i = 0; i < chunks.length; i++) {
+    if (i > 0 && Date.now() - started > BUDGET_MS) {
+      truncated = true;
+      break;
+    }
     const noteIds = chunks[i];
 
     // The full note map is passed through so provenance can resolve against
@@ -321,6 +346,7 @@ export async function* extractStreaming(
       rejectedTotal += resolve.rejected.length;
 
       mergeChunk(target, doc, { isFirst: i === 0, isLast: i === chunks.length - 1 });
+      partsDone = i + 1;
 
       yield {
         type: "chunk",
@@ -354,6 +380,7 @@ export async function* extractStreaming(
   const shapeOk = Boolean(validate(target));
 
   yield { type: "doc", doc: target as Record<string, unknown> };
+  const covered = chunks.slice(0, partsDone).flat();
   yield {
     type: "done",
     shapeOk,
@@ -362,6 +389,10 @@ export async function* extractStreaming(
     spansRejected: rejectedTotal,
     usage: { promptTokens, outputTokens },
     elapsedMs: Date.now() - started,
+    truncated,
+    partsDone,
+    partsTotal: chunks.length,
+    lastShift: covered.length ? covered[covered.length - 1] : 0,
   };
 }
 

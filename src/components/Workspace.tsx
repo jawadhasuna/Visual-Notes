@@ -29,6 +29,7 @@ export function Workspace() {
   } | null>(null);
   const [progress, setProgress] = useState<RunProgress | null>(null);
   const [warnings, setWarnings] = useState<string[]>([]);
+  const [truncation, setTruncation] = useState<string | null>(null);
 
   const clearTimers = useCallback(() => {
     timers.current.forEach(clearTimeout);
@@ -55,6 +56,7 @@ export function Workspace() {
     setReport(null);
     setProgress(null);
     setWarnings([]);
+    setTruncation(null);
     setStep(0);
     setState("running");
 
@@ -68,6 +70,8 @@ export function Workspace() {
     let fatal: string | null = null;
     // The chart frames carry these; the done event carries only the tallies.
     let charted = false;
+    let sawDone = false;
+    let cutMessage: string | null = null;
     let caseId = "";
     let coverage: number | null = null;
     const failures: string[] = [];
@@ -111,6 +115,13 @@ export function Workspace() {
           break;
         }
         case "done": {
+          sawDone = true;
+          if (event.truncated) {
+            cutMessage =
+              `Stopped after ${event.partsDone} of ${event.partsTotal} parts to stay ` +
+              `inside the server's time limit. The chart covers shifts 1 to ` +
+              `${event.lastShift}; later shifts are not included.`;
+          }
           setReport({
             spansResolved: Number(event.spansResolved ?? 0),
             spansRejected: Number(event.spansRejected ?? 0),
@@ -175,6 +186,15 @@ export function Workspace() {
       clearTimers();
       setWarnings(failures);
 
+      // A stream that simply stops is not a stream that finished. Without this,
+      // a connection killed by the host reads as a completed run.
+      if (!sawDone && charted) {
+        cutMessage =
+          "The connection closed before the run finished, so this chart covers " +
+          "only part of the admission.";
+      }
+      setTruncation(cutMessage);
+
       // Every part failing is a failed run, not a ready chart — the shell the
       // server still emits must not be presented as a result.
       if (fatal || !charted || (ranges.length > 0 && failures.length === ranges.length)) {
@@ -215,6 +235,7 @@ export function Workspace() {
     setReport(null);
     setProgress(null);
     setWarnings([]);
+    setTruncation(null);
   }, [clearTimers]);
 
   return (
@@ -263,6 +284,7 @@ export function Workspace() {
               report={report}
               progress={progress}
               warnings={warnings}
+              truncation={truncation}
             />
           </div>
         </div>
