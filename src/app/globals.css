@@ -51,8 +51,8 @@
   --text-dim: #8fa8b8;
 
   /* Brand fills are absolute: navy N, seagreen C, everywhere. */
-  --mark-navy: #052c52;
-  --mark-teal: #04acaf;
+  --mark-navy: #012850;
+  --mark-teal: #01acaf;
   /* Small lockups reverse to a white monochrome mark — brand navy is far too
      dark to hold at 40px on this ground. The hero keeps full colour. */
   --mark-compact-ink: #ffffff;
@@ -62,7 +62,7 @@
      be unreadable as type, so the blue is lifted to 5.9:1. The seagreen is
      the true brand value, which already clears at 6.8:1. */
   --wordmark-blue: #3f96d6;
-  --wordmark-teal: #04acaf;
+  --wordmark-teal: #01acaf;
 
   /* Small lockups keep a light chip so the navy reads at 32px. */
   --mark-plate: #eef4f7;
@@ -186,11 +186,12 @@ body {
   inset: 0;
 }
 
-/* Flat lockups: plain 2D artwork, reversed to white. The hairline weave in
-   the artwork still separates the N from the C in monochrome. */
+/* Flat lockups: plain 2D artwork in the full brand colours, matching the
+   hero. Kept as its own rule so the small lockup can be treated differently
+   again if the navy proves too dark against the header. */
 .mark-compact {
-  --mark-navy: var(--mark-compact-ink);
-  --mark-teal: var(--mark-compact-ink);
+  --mark-navy: #012850;
+  --mark-teal: #01acaf;
 }
 
 /* The hero solid sits on a cast shadow — shadow reads as solidity. No
