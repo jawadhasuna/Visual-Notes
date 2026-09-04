@@ -1,9 +1,17 @@
 /**
  * Server-side Vertex AI client.
  *
- * Authentication is Application Default Credentials, so nothing secret lives
- * in this repo: locally that resolves to the developer's gcloud login, and on
- * a deployed host to the attached service account. Same code either way.
+ * Authentication has to work in two places that offer different things.
+ *
+ * Locally there is a gcloud login, so Application Default Credentials resolve
+ * on their own and nothing needs configuring. On a serverless host there is no
+ * gcloud and no metadata server, so ADC finds nothing and every request fails
+ * with "no credentials" — which is exactly what a first deploy does. There the
+ * credentials arrive as a service-account key held in an environment variable
+ * and injected by the host at runtime.
+ *
+ * Preferring the environment variable when it is present means the same code
+ * runs in both places, and the key itself never touches the repository.
  *
  * Server-only — never import from a client component.
  */
@@ -19,9 +27,51 @@ const PROJECT = process.env.GOOGLE_CLOUD_PROJECT ?? "";
 const LOCATION = process.env.VERTEX_LOCATION ?? "global";
 const MODEL = process.env.VERTEX_MODEL ?? "gemini-3.7-flash";
 
-const auth = new GoogleAuth({
-  scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-});
+const SCOPES = ["https://www.googleapis.com/auth/cloud-platform"];
+
+/**
+ * Build the auth client once, from a service-account key when the host supplies
+ * one and from the ambient gcloud login otherwise.
+ *
+ * A malformed key is reported here rather than as a confusing 401 later: it is
+ * the single most likely thing to be wrong after pasting a long JSON blob into
+ * a settings box.
+ */
+function makeAuth(): GoogleAuth {
+  const inline = process.env.GOOGLE_SERVICE_ACCOUNT_KEY?.trim();
+  if (!inline) return new GoogleAuth({ scopes: SCOPES });
+
+  let credentials: { client_email?: string; private_key?: string; project_id?: string };
+  try {
+    credentials = JSON.parse(inline);
+  } catch {
+    throw new Error(
+      "GOOGLE_SERVICE_ACCOUNT_KEY is set but is not valid JSON. Paste the whole " +
+        "key file, starting with { and ending with }.",
+    );
+  }
+  if (!credentials.client_email || !credentials.private_key) {
+    throw new Error(
+      "GOOGLE_SERVICE_ACCOUNT_KEY is missing client_email or private_key. " +
+        "Use the JSON key file, not the key id.",
+    );
+  }
+  // Some settings UIs turn the escaped newlines in the private key into literal
+  // backslash-n, which makes the signature fail with an opaque error.
+  credentials.private_key = credentials.private_key.replace(/\\n/g, "\n");
+
+  return new GoogleAuth({
+    credentials,
+    scopes: SCOPES,
+    projectId: credentials.project_id ?? PROJECT,
+  });
+}
+
+let authClient: GoogleAuth | null = null;
+function getAuth(): GoogleAuth {
+  if (!authClient) authClient = makeAuth();
+  return authClient;
+}
 
 /** Loaded once — the schema is a build artefact, not per-request state. */
 let cached: { strict: Record<string, unknown>; model: Record<string, unknown> } | null = null;
@@ -52,6 +102,19 @@ export class VertexError extends Error {
     super(message);
   }
 }
+
+/**
+ * The fix differs by environment, so the message has to as well: telling someone
+ * on a serverless host to run a gcloud command sends them somewhere they cannot
+ * go, which is what the first version of this did.
+ */
+const CREDENTIAL_HELP = process.env.GOOGLE_SERVICE_ACCOUNT_KEY
+  ? "Google rejected the service-account key. Check that the key is valid and " +
+    "that the account has the Vertex AI User role on this project."
+  : process.env.VERCEL
+    ? "No Google credentials on the server. Add GOOGLE_SERVICE_ACCOUNT_KEY to " +
+      "the project's environment variables and redeploy."
+    : "No Google credentials. Run: gcloud auth application-default login";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -90,9 +153,9 @@ async function callModel(
   chunk?: { index: number; total: number; noteIds: number[] },
 ): Promise<{ doc: PartialDoc; promptTokens: number; outputTokens: number }> {
   const { model } = schemas();
-  const token = await auth.getAccessToken();
+  const token = await getAuth().getAccessToken();
   if (!token) {
-    throw new VertexError("No Google credentials. Run: gcloud auth application-default login", 401);
+    throw new VertexError(CREDENTIAL_HELP, 401);
   }
 
   const host =
@@ -260,12 +323,9 @@ export async function extractVisualNote(
   }
 
   const { strict, model } = schemas();
-  const token = await auth.getAccessToken();
+  const token = await getAuth().getAccessToken();
   if (!token) {
-    throw new VertexError(
-      "No Google credentials. Run: gcloud auth application-default login",
-      401,
-    );
+    throw new VertexError(CREDENTIAL_HELP, 401);
   }
 
   const host =
