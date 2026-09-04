@@ -153,10 +153,17 @@ async function callModel(
   chunk?: { index: number; total: number; noteIds: number[] },
 ): Promise<{ doc: PartialDoc; promptTokens: number; outputTokens: number }> {
   const { model } = schemas();
-  const token = await getAuth().getAccessToken();
-  if (!token) {
+  // getAccessToken throws rather than returning null when no credentials can be
+  // found at all, so both outcomes have to be funnelled to the same message --
+  // otherwise a deployed host leaks Google's own "could not load the default
+  // credentials" text, which tells the reader nothing about how to fix it here.
+  let token: string | null | undefined;
+  try {
+    token = await getAuth().getAccessToken();
+  } catch {
     throw new VertexError(CREDENTIAL_HELP, 401);
   }
+  if (!token) throw new VertexError(CREDENTIAL_HELP, 401);
 
   const host =
     LOCATION === "global" ? "aiplatform.googleapis.com" : `${LOCATION}-aiplatform.googleapis.com`;
@@ -323,10 +330,17 @@ export async function extractVisualNote(
   }
 
   const { strict, model } = schemas();
-  const token = await getAuth().getAccessToken();
-  if (!token) {
+  // getAccessToken throws rather than returning null when no credentials can be
+  // found at all, so both outcomes have to be funnelled to the same message --
+  // otherwise a deployed host leaks Google's own "could not load the default
+  // credentials" text, which tells the reader nothing about how to fix it here.
+  let token: string | null | undefined;
+  try {
+    token = await getAuth().getAccessToken();
+  } catch {
     throw new VertexError(CREDENTIAL_HELP, 401);
   }
+  if (!token) throw new VertexError(CREDENTIAL_HELP, 401);
 
   const host =
     LOCATION === "global"

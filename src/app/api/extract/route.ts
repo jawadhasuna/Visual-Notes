@@ -16,7 +16,22 @@ import { parseNotes } from "@/lib/extract.ts";
 import { toVisualNote } from "@/lib/toVisualNote.ts";
 
 export const runtime = "nodejs";
-export const maxDuration = 800;
+
+/**
+ * How long the host will let one extraction run.
+ *
+ * This is a hosting-plan ceiling, not a preference: Vercel rejects the build
+ * outright with "maxDuration must be between 1 and 300 for plan hobby". At the
+ * measured rate of roughly 33 seconds per four-shift part, 300 seconds is about
+ * nine parts, so an admission longer than about 36 shifts will be cut off.
+ *
+ * That covers 146 of the 163 cases in the corpus. The 17 it does not cover
+ * include the longest, case 15 at 141 shifts. Running locally has no such
+ * limit, because nothing is imposing one.
+ *
+ * On a plan that allows longer functions this is the single number to raise.
+ */
+export const maxDuration = 300;
 
 export async function POST(request: Request) {
   let payload: { notes?: unknown; caseId?: unknown };
