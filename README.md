@@ -1,5 +1,5 @@
 # Visual Notes
-## https://visualsnote.vercel.app
+## https://visualizenotes.vercel.app
 
 Front end for the **Visual Notes** prototype — narrative critical-care nursing
 documentation restructured into a source-verifiable, body-system chart.
