@@ -3,6 +3,7 @@ import { Hero } from "@/components/Hero";
 import { Workspace } from "@/components/Workspace";
 import { MethodSection, ResearchSection } from "@/components/MethodSection";
 import { Mark } from "@/components/Logo";
+import { COMPANY_SITE } from "@/lib/links";
 
 export default function Home() {
   return (
@@ -20,11 +21,14 @@ export default function Home() {
           <div className="flex items-center gap-3">
             <Mark className="mark-compact w-11 shrink-0" />
             <div>
-              <p
-                className="font-display text-[12.5px] font-extrabold tracking-[0.045em] uppercase"
-                style={{ color: "#ffffff" }}
-              >
-                New England CareFlow LLC
+              <p className="font-display text-[12.5px] font-extrabold tracking-[0.045em] uppercase">
+                <a
+                  href={COMPANY_SITE}
+                  className="underline-offset-4 hover:underline"
+                  style={{ color: "#ffffff" }}
+                >
+                  New England CareFlow LLC
+                </a>
               </p>
               <p className="mt-0.5 text-[11px]" style={{ color: "var(--text-dim)" }}>
                 Research and prototype development · not clinical decision support
