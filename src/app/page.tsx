@@ -21,14 +21,11 @@ export default function Home() {
           <div className="flex items-center gap-3">
             <Mark className="mark-compact w-11 shrink-0" />
             <div>
-              <p className="font-display text-[12.5px] font-extrabold tracking-[0.045em] uppercase">
-                <a
-                  href={COMPANY_SITE}
-                  className="underline-offset-4 hover:underline"
-                  style={{ color: "#ffffff" }}
-                >
-                  New England CareFlow LLC
-                </a>
+              <p
+                className="font-display text-[12.5px] font-extrabold tracking-[0.045em] uppercase"
+                style={{ color: "#ffffff" }}
+              >
+                New England CareFlow LLC
               </p>
               <p className="mt-0.5 text-[11px]" style={{ color: "var(--text-dim)" }}>
                 Research and prototype development · not clinical decision support
@@ -38,7 +35,7 @@ export default function Home() {
                 className="mt-2 inline-block text-[12px] font-semibold underline-offset-4 hover:underline"
                 style={{ color: "var(--wordmark-teal)" }}
               >
-                Visit the main website
+                Company Website
               </a>
             </div>
           </div>
