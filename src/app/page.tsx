@@ -21,22 +21,33 @@ export default function Home() {
           <div className="flex items-center gap-3">
             <Mark className="mark-compact w-11 shrink-0" />
             <div>
-              <p
-                className="font-display text-[12.5px] font-extrabold tracking-[0.045em] uppercase"
-                style={{ color: "#ffffff" }}
-              >
-                New England CareFlow LLC
-              </p>
+              {/* Name and link share a line, split by a hairline so they do not
+                  read as one phrase. On a phone the link wraps below the name,
+                  so the hairline is hidden there rather than left dangling at
+                  the end of the first line. */}
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <p
+                  className="font-display text-[12.5px] font-extrabold tracking-[0.045em] uppercase"
+                  style={{ color: "#ffffff" }}
+                >
+                  New England CareFlow LLC
+                </p>
+                <span
+                  aria-hidden
+                  className="hidden h-3 w-px sm:block"
+                  style={{ background: "var(--border)" }}
+                />
+                <a
+                  href={COMPANY_SITE}
+                  className="text-[12px] font-semibold underline-offset-4 hover:underline"
+                  style={{ color: "var(--wordmark-teal)" }}
+                >
+                  Company Website
+                </a>
+              </div>
               <p className="mt-0.5 text-[11px]" style={{ color: "var(--text-dim)" }}>
                 Research and prototype development · not clinical decision support
               </p>
-              <a
-                href={COMPANY_SITE}
-                className="mt-2 inline-block text-[12px] font-semibold underline-offset-4 hover:underline"
-                style={{ color: "var(--wordmark-teal)" }}
-              >
-                Company Website
-              </a>
             </div>
           </div>
           <div className="max-w-md space-y-1.5">
