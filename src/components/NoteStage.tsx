@@ -1,51 +1,34 @@
 "use client";
 
-import { useId } from "react";
-
 /**
- * Hero mark for Visual Notes: the product icon built as a solid object.
+ * Hero mark for Visual Notes: the note page from the product icon, built as a
+ * solid object -- a sheet with real thickness, lanes printed on its face.
  *
- * It is the same artwork as the site icon (app/icon.svg) -- a note page whose
- * rows are body-system lanes, on a navy tile -- split into its parts so each
- * can sit at its own depth:
+ * It is the page from the site icon (app/icon.svg) without the navy tile
+ * behind it. The drawing is cropped to the page's own bounds, so the sheet
+ * fills the stage rather than sitting at half size inside an empty square.
  *
- *   - the tile is a slab, stacked copies receding along Z so it has a real
- *     edge rather than being a flat card;
- *   - the page is lifted clear of the tile with its own paper edge, so the
- *     sheet visibly stands off the slab beneath it.
- *
- * It does not revolve: it holds still at a slight turn, and only the glare
- * sweep moves, on the same 7s clock the company mark used.
+ * Depth comes from copies of the page's outline stacked along Z behind the
+ * printed face, shading darker toward the back: the paper's edge. It holds
+ * still at a fixed turn -- face-on, that edge would be invisible -- and does
+ * not animate.
  */
 
 const PAGE =
   "M148 84H328L392 148V400Q392 428 364 428H148Q120 428 120 400V112Q120 84 148 84Z";
 const FOLD = "M328 84L392 148H352Q328 148 328 124Z";
 
-const TILE_LAYERS = 14; // slab thickness, as stacked copies
-const TILE_STEP = 1.3;
-const PAGE_LAYERS = 6; // how far the page stands proud of the tile
-const PAGE_STEP = 1.5;
+/** The page's bounds in the icon's 512 grid, with a little margin. */
+const VIEW = { x: 112, y: 76, w: 288, h: 360 };
+const VIEWBOX = `${VIEW.x} ${VIEW.y} ${VIEW.w} ${VIEW.h}`;
 
-function Tile() {
-  const id = useId().replace(/:/g, "");
-  return (
-    <svg viewBox="0 0 512 512" className="h-full w-full" aria-hidden>
-      <defs>
-        <linearGradient id={`vn-tile-${id}`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#0A3A66" />
-          <stop offset="1" stopColor="#012850" />
-        </linearGradient>
-      </defs>
-      <rect width="512" height="512" rx="116" fill={`url(#vn-tile-${id})`} />
-    </svg>
-  );
-}
+const EDGE_LAYERS = 10; // the sheet's thickness, as stacked outlines
+const EDGE_STEP = 1.5;
 
-/** One slice of the page's edge: its outline in a single flat colour. */
+/** One slice of the paper's edge: the page outline in a single flat colour. */
 function PageEdge({ color }: { color: string }) {
   return (
-    <svg viewBox="0 0 512 512" className="h-full w-full" aria-hidden>
+    <svg viewBox={VIEWBOX} className="h-full w-full" aria-hidden>
       <path d={PAGE} fill={color} />
     </svg>
   );
@@ -54,7 +37,7 @@ function PageEdge({ color }: { color: string }) {
 /** The printed face of the page: fold, title line and three lanes. */
 function PageFace() {
   return (
-    <svg viewBox="0 0 512 512" className="h-full w-full" aria-hidden>
+    <svg viewBox={VIEWBOX} className="h-full w-full" aria-hidden>
       <path d={PAGE} fill="#FFFFFF" />
       <path d={FOLD} fill="#BFE6E7" />
       <line x1="164" y1="152" x2="268" y2="152" stroke="#012850" strokeWidth="20" strokeLinecap="round" />
@@ -74,125 +57,55 @@ function PageFace() {
   );
 }
 
-/**
- * Specular sweep across the whole mark, once every 7s. It is masked to the
- * tile's silhouette, which contains the page, so the light
- * crosses slab and paper as one surface rather than stopping at an edge.
- */
-function Glare() {
-  const id = useId().replace(/:/g, "");
-  return (
-    <svg viewBox="0 0 512 512" className="h-full w-full" aria-hidden>
-      <defs>
-        <mask id={`vn-glare-mask-${id}`} style={{ maskType: "alpha" }}>
-          <rect width="512" height="512" rx="116" fill="#fff" />
-        </mask>
-        <linearGradient id={`vn-glare-grad-${id}`} x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#fff" stopOpacity="0" />
-          <stop offset="45%" stopColor="#fff" stopOpacity="0.55" />
-          <stop offset="55%" stopColor="#fff" stopOpacity="0.9" />
-          <stop offset="100%" stopColor="#fff" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <g mask={`url(#vn-glare-mask-${id})`}>
-        {/* the band starts clear of the tile's left edge and is thrown past
-            its right edge; both ends are fully transparent anyway */}
-        <g transform="rotate(-16 256 256)">
-          <rect
-            className="note-glare-band"
-            x="-180"
-            y="-200"
-            width="120"
-            height="912"
-            fill={`url(#vn-glare-grad-${id})`}
-          />
-        </g>
-      </g>
-    </svg>
-  );
-}
-
 export function NoteStage({ size = 320 }: { size?: number }) {
-  const side = Math.round(size * 0.62);
-
-  const pageFaceZ = (PAGE_LAYERS + 1) * PAGE_STEP;
-  const front = pageFaceZ + 0.5;
-  const back = -TILE_LAYERS * TILE_STEP;
-  // tilt about the solid's own middle, not about the tile's front face
-  const centre = -(front + back) / 2;
+  const height = Math.round(size * 0.72);
+  const width = Math.round((height * VIEW.w) / VIEW.h);
+  // tilt about the sheet's own middle rather than about its printed face
+  const centre = (EDGE_LAYERS * EDGE_STEP) / 2;
 
   return (
     <div
       className="mark-stage relative grid place-items-center"
       style={{ width: size, height: size * 0.8 }}
     >
-      {/* Held at a fixed turn rather than revolving. Face-on, the slab's edge
-          and the page's lift are invisible, so this tilt is what makes the
-          depth read while the mark stays still. */}
+      {/* Held at a fixed turn rather than revolving: face-on, the paper's edge
+          is invisible, so this tilt is what makes the depth read. */}
       <div
         className="relative"
         role="img"
         aria-label="Visual Notes"
         style={{
-          width: side,
-          height: side,
+          width,
+          height,
           transformStyle: "preserve-3d",
           transform: "rotateY(-22deg) rotateX(10deg)",
         }}
       >
         <div className="mark-solid relative h-full w-full" style={{ transform: `translateZ(${centre}px)` }}>
-          {/* slab side wall: copies receding into shadow */}
-          {Array.from({ length: TILE_LAYERS }, (_, i) => {
-            const t = i / (TILE_LAYERS - 1);
+          {/* paper edge: light just behind the face, shading toward the back */}
+          {Array.from({ length: EDGE_LAYERS }, (_, i) => {
+            const t = i / (EDGE_LAYERS - 1); // 0 = just behind the face, 1 = back
+            const shade = Math.round(226 - t * 80);
+            const isBack = i === EDGE_LAYERS - 1;
             return (
               <span
-                key={`tile-${i}`}
+                key={i}
                 aria-hidden
                 className="mark-face"
                 style={{
-                  transform: `translateZ(${-(i + 1) * TILE_STEP}px)`,
-                  filter: `brightness(${(0.9 - t * 0.5).toFixed(3)})`,
+                  transform: `translateZ(${-(i + 1) * EDGE_STEP}px)`,
+                  // the back of the sheet casts the shadow that grounds it
+                  filter: isBack ? "drop-shadow(0 14px 22px rgba(0, 6, 14, 0.55))" : undefined,
                 }}
-              >
-                <Tile />
-              </span>
-            );
-          })}
-
-          {/* slab face, casting the shadow that makes it read as solid */}
-          <span className="mark-face mark-front">
-            <Tile />
-          </span>
-
-          {/* paper edge: lighter where it meets the face, greyer toward the slab */}
-          {Array.from({ length: PAGE_LAYERS }, (_, j) => {
-            const t = j / (PAGE_LAYERS - 1); // 0 = next to the tile, 1 = under the face
-            const shade = Math.round(158 + t * 72); // #9E.. -> #E6..
-            return (
-              <span
-                key={`page-${j}`}
-                aria-hidden
-                className="mark-face"
-                style={{ transform: `translateZ(${(j + 1) * PAGE_STEP}px)` }}
               >
                 <PageEdge color={`rgb(${shade - 8}, ${shade + 6}, ${Math.min(255, shade + 14)})`} />
               </span>
             );
           })}
 
-          {/* the printed page, lifted, with a soft shadow on the slab beneath */}
-          <span
-            className="mark-face"
-            style={{
-              transform: `translateZ(${pageFaceZ}px)`,
-              filter: "drop-shadow(0 3px 4px rgba(1, 16, 32, 0.35))",
-            }}
-          >
+          {/* the printed face */}
+          <span className="mark-face">
             <PageFace />
-          </span>
-
-          <span className="mark-face" style={{ transform: `translateZ(${front}px)` }}>
-            <Glare />
           </span>
         </div>
       </div>
