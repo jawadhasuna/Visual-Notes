@@ -31,13 +31,6 @@ export function Hero() {
       <div className="relative mx-auto flex w-full max-w-[1500px] flex-col items-center px-5 pt-16 pb-20 text-center">
         <NoteStage size={320} />
 
-        <p
-          className="font-display mt-3 text-[16px] font-extrabold tracking-[0.2em] uppercase"
-          style={{ color: "var(--color-teal-400)" }}
-        >
-          New England CareFlow LLC
-        </p>
-
         <h1
           className="font-display mt-4 text-6xl leading-[0.95] font-extrabold tracking-[-0.03em] sm:text-7xl"
           style={{ color: "var(--text)" }}
