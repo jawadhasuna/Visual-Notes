@@ -9,17 +9,21 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/",
     display: "standalone",
     background_color: "#04121f",
-    theme_color: "#052c52",
+    theme_color: "#012850",
+    // "any" icons are shown as drawn; "maskable" icons may be cropped by the
+    // launcher to a circle or squircle, so their artwork sits inside the
+    // central safe zone. Offering both lets each launcher pick what it needs.
     icons: [
-      { src: "/brand/icon-96.png", sizes: "96x96", type: "image/png" },
+      { src: "/icons/vn-icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: "/icons/vn-icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
       {
-        src: "/brand/icon-192.png",
+        src: "/icons/vn-icon-maskable-192.png",
         sizes: "192x192",
         type: "image/png",
         purpose: "maskable",
       },
       {
-        src: "/brand/icon-512.png",
+        src: "/icons/vn-icon-maskable-512.png",
         sizes: "512x512",
         type: "image/png",
         purpose: "maskable",

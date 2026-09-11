@@ -25,6 +25,14 @@ export const metadata: Metadata = {
   description:
     "Visual Notes — narrative critical-care nursing documentation restructured into a source-verifiable body-system chart. New England CareFlow LLC.",
   applicationName: "Visual Notes",
+  // Added to an iPhone home screen, the app is labelled "Visual Notes" and opens
+  // without Safari's bars. The status bar stays light because the site's top bar
+  // is white; a translucent bar would put white status text on a white header.
+  appleWebApp: {
+    capable: true,
+    title: "Visual Notes",
+    statusBarStyle: "default",
+  },
   authors: [{ name: "New England CareFlow LLC" }],
   openGraph: {
     title: "Visual Notes",

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- C: "The chart itself" - body-system lanes with finding cards, as drawn in the app -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0A3A66"/>
+      <stop offset="1" stop-color="#012850"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="116" fill="url(#bg)"/>
+
+  <!-- the note page, with a folded corner -->
+  <path d="M148 84H328L392 148V400Q392 428 364 428H148Q120 428 120 400V112Q120 84 148 84Z" fill="#FFFFFF"/>
+  <path d="M328 84L392 148H352Q328 148 328 124Z" fill="#BFE6E7"/>
+
+  <!-- title line -->
+  <line x1="164" y1="152" x2="268" y2="152" stroke="#012850" stroke-width="20" stroke-linecap="round"/>
+
+  <!-- three body-system lanes: a navy lane label, then finding cards along the shifts -->
+  <rect x="156" y="200" width="40" height="44" rx="10" fill="#012850"/>
+  <rect x="212" y="200" width="60" height="44" rx="12" fill="#01ACAF"/>
+  <rect x="284" y="200" width="68" height="44" rx="12" fill="#7FD3D5"/>
+
+  <rect x="156" y="264" width="40" height="44" rx="10" fill="#012850"/>
+  <rect x="248" y="264" width="104" height="44" rx="12" fill="#01ACAF"/>
+
+  <rect x="156" y="328" width="40" height="44" rx="10" fill="#012850"/>
+  <rect x="212" y="328" width="60" height="44" rx="12" fill="#7FD3D5"/>
+  <rect x="284" y="328" width="68" height="44" rx="12" fill="#01ACAF"/>
+</svg>
