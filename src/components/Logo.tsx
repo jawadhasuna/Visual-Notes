@@ -93,11 +93,33 @@ export function Mark({
   );
 }
 
+/** The mark's height as a fraction of its width, from its viewBox. */
+const ASPECT = 136.6 / 221.2;
+
+/**
+ * The header lockup's mark, matching the company site's header: the flat
+ * artwork rests, flips a fast 360° on its vertical axis like a coin, then
+ * catches the glare as it settles -- one 7s cycle, CSS only. Flat by design:
+ * a single face turning in perspective, with no stacked depth layers.
+ */
+export function SpinningMark({ width = 40 }: { width?: number }) {
+  return (
+    <span
+      className="relative block shrink-0"
+      style={{ width, height: width * ASPECT, perspective: width * 5.5 }}
+    >
+      <span className="mark-spinner block h-full w-full">
+        <Mark className="block h-full w-full" glare />
+      </span>
+    </span>
+  );
+}
+
 /** Full lockup: mark + company name, as used in the site header. */
 export function Wordmark({ className = "" }: { className?: string }) {
   return (
     <span className={`flex items-center gap-3 ${className}`}>
-      <Mark className="w-10 shrink-0" />
+      <SpinningMark width={40} />
       <span className="flex flex-col leading-none">
         <span className="font-display text-[0.94rem] font-extrabold tracking-[0.045em] uppercase">
           <span style={{ color: "var(--header-wordmark-blue)" }}>New England</span>{" "}

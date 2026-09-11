@@ -1,6 +1,6 @@
 "use client";
 
-import { MarkStage } from "./MarkStage";
+import { NoteStage } from "./NoteStage";
 import { StethoscopeBackdrop } from "./StethoscopeBackdrop";
 
 const STATS = [
@@ -29,7 +29,7 @@ export function Hero() {
       <StethoscopeBackdrop />
 
       <div className="relative mx-auto flex w-full max-w-[1500px] flex-col items-center px-5 pt-16 pb-20 text-center">
-        <MarkStage size={320} />
+        <NoteStage size={320} />
 
         <p
           className="font-display mt-3 text-[16px] font-extrabold tracking-[0.2em] uppercase"

@@ -192,6 +192,40 @@ body {
   }
 }
 
+/* The Visual Notes mark's sweep. Same 7s clock as the revolve, so it lands
+   just after the spin settles, but its own travel: the band crosses a
+   512-unit square rather than the company mark's wide viewBox. */
+.note-glare-band {
+  transform-box: view-box;
+  transform: translateX(0px);
+  opacity: 0;
+  animation: noteGlare 7s linear infinite;
+}
+
+@keyframes noteGlare {
+  0%,
+  89% {
+    transform: translateX(0px);
+    opacity: 0;
+  }
+  90.5% {
+    opacity: 1;
+  }
+  98% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(760px);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .note-glare-band {
+    animation: none;
+  }
+}
+
 
 
 
