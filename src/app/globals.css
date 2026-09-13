@@ -50,6 +50,10 @@
   --text: #eaf4f7;
   --text-dim: #8fa8b8;
 
+  /* Chart card fields: each kind of detail keeps its own colour. */
+  --field-intervention: #8cc0ff;
+  --field-quote: #6fd6d3;
+
   /* Brand fills are absolute: navy N, seagreen C, everywhere. */
   --mark-navy: #012850;
   --mark-teal: #01acaf;
@@ -283,6 +287,22 @@ body {
   background-color: var(--surface-2);
 }
 
+/* The chart is always drawn on white, for reading and for print: the same
+   tokens the components use are redefined inside it. */
+.chart-light {
+  --surface: #ffffff;
+  --surface-2: #f4f8fa;
+  --border: #d5e1e8;
+  --text: #0b1b28;
+  --text-dim: #52697a;
+  --field-intervention: #1f5fb4;
+  --chart-stripe: #f5f8fa;
+  --chart-rule: #e3eaef;
+  background-color: #ffffff;
+  color: var(--text);
+  color-scheme: light;
+}
+
 textarea.notes-field {
   field-sizing: content;
 }
@@ -378,6 +398,8 @@ textarea.notes-field::placeholder {
     --border: #cfdde6;
     --text: #0b1b28;
     --text-dim: #4d6474;
+    --field-intervention: #1f5fb4;
+    --field-quote: #047a7c;
   }
 
   html,

@@ -242,6 +242,12 @@
           "minLength": 1,
           "maxLength": 160
         },
+        "headline": {
+          "description": "The finding in 2 to 6 words, shown on the chart before the card is opened. Same facts, fewer words: keeps every negation and adds no number the note does not contain.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60
+        },
         "intervention": {
           "description": "What was done about it.",
           "type": ["string", "null"],

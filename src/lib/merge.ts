@@ -23,7 +23,13 @@ export type PartialDoc = {
     admission?: { lines?: string[] } & Cited;
   };
   shifts?: { index: number; note_id: number; label?: string }[];
-  findings?: (Cited & { id?: string; lane?: string; shift?: number; finding?: string })[];
+  findings?: (Cited & {
+    id?: string;
+    lane?: string;
+    shift?: number;
+    finding?: string;
+    headline?: string;
+  })[];
   source?: { note_count: number; char_count: number; corpus?: string };
   outcome?: { lines?: string[]; disposition?: string } & Cited;
   coverage?: { clinical_sentences?: number; covered_sentences?: number; ratio?: number };
@@ -131,6 +137,10 @@ export function finaliseDoc(
     if (f.finding && f.finding.length > 160) {
       f.finding = f.finding.slice(0, 159).trimEnd() + "…";
     }
+    // An over-long headline is dropped, not cut: a clipped paraphrase can say
+    // something the note did not, and the chart builds a label from the
+    // finding itself when there is none.
+    if (f.headline && f.headline.length > 60) delete f.headline;
   }
 
   const h = (doc.header ??= {});

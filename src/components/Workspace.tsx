@@ -8,7 +8,7 @@ import {
   type RunState,
   type RunProgress,
 } from "./ConversionStage";
-import { GraphPanel } from "./GraphPanel";
+import { GraphPanel, type OpenCards } from "./GraphPanel";
 import { SAMPLE_NOTE, type VisualNote } from "@/lib/demo";
 import { downloadChartPng } from "@/lib/exportImage";
 
@@ -30,6 +30,8 @@ export function Workspace() {
   const [progress, setProgress] = useState<RunProgress | null>(null);
   const [warnings, setWarnings] = useState<string[]>([]);
   const [truncation, setTruncation] = useState<string | null>(null);
+  // Held here rather than in the chart so the downloaded image can match it.
+  const [open, setOpen] = useState<OpenCards>(() => new Set());
 
   const clearTimers = useCallback(() => {
     timers.current.forEach(clearTimeout);
@@ -57,6 +59,7 @@ export function Workspace() {
     setProgress(null);
     setWarnings([]);
     setTruncation(null);
+    setOpen(new Set());
     setStep(0);
     setState("running");
 
@@ -218,13 +221,13 @@ export function Workspace() {
     if (!result) return;
     setSaving(true);
     try {
-      await downloadChartPng(result, "visual-note.png");
+      await downloadChartPng(result, open, "visual-note.png");
     } catch (err) {
       console.error("Chart export failed", err);
     } finally {
       setSaving(false);
     }
-  }, [result]);
+  }, [result, open]);
 
   const reset = useCallback(() => {
     clearTimers();
@@ -236,6 +239,7 @@ export function Workspace() {
     setProgress(null);
     setWarnings([]);
     setTruncation(null);
+    setOpen(new Set());
   }, [clearTimers]);
 
   return (
@@ -336,7 +340,7 @@ export function Workspace() {
             </div>
           </div>
           <div>
-            <GraphPanel result={result} />
+            <GraphPanel result={result} open={open} onOpenChange={setOpen} />
           </div>
         </div>
       </div>

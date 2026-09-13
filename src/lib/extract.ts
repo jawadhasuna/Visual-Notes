@@ -52,6 +52,13 @@ export function buildModelSchema(strict: JsonSchema): JsonSchema {
         );
       }
     }
+    // The headline is optional in the strict schema, so documents written
+    // before it existed still validate, but it is required of the model:
+    // left optional, the model mostly leaves it out.
+    if (props?.finding && props?.headline && Array.isArray(obj.required)) {
+      const required = obj.required as string[];
+      if (!required.includes("headline")) required.push("headline");
+    }
     for (const v of Object.values(obj)) strip(v);
   };
 
@@ -143,6 +150,14 @@ DENSITY
 Extract every distinct clinical observation, not a summary. A busy ICU shift
 usually yields several findings across different body systems. Do not collapse
 a whole shift into one line.
+
+HEADLINES
+Give every finding a headline: the same fact in 2 to 6 words, the way a nurse
+would jot it on a whiteboard — for example "On BiPAP, sats 94%", "Afebrile",
+"Foley removed", "Hypotensive, norepi started". Standard ICU abbreviations are
+fine. Keep every negation ("denies SOB" must never become "SOB") and never
+write a number that is not in the note. The chart shows the headline first;
+the full finding and the quote appear when the card is opened.
 
 case_id is "${caseId}". schema_version is "1.0.0". The shift index for a note is
 its note number.

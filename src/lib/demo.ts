@@ -21,6 +21,8 @@ export type Lane = {
   abbr: string;
   /** Categorical lane colour — data, not brand chrome. */
   color: string;
+  /** Shown beside the lane name so a column reads at a glance. */
+  emoji: string;
 };
 
 export type Route =
@@ -36,6 +38,8 @@ export type LaneNode = {
   route?: Route;
   /** The verbatim source text this card came from, for provenance display. */
   evidence?: string;
+  /** Two-to-six-word label shown before the card is opened. */
+  headline?: string;
 };
 
 export type VisualNote = {
@@ -49,11 +53,11 @@ export type VisualNote = {
 };
 
 export const LANES: Lane[] = [
-  { id: "resp", label: "Respiratory", abbr: "Resp", color: "#d9556e" },
-  { id: "cv", label: "Cardiovascular", abbr: "CV", color: "#E08A3C" },
-  { id: "neuro", label: "Neurological", abbr: "Neuro", color: "#8b6fd1" },
-  { id: "id", label: "Infectious Disease", abbr: "ID", color: "#2fa86b" },
-  { id: "gu", label: "Genitourinary", abbr: "GU", color: "#3b8fd4" },
+  { id: "resp", label: "Respiratory", abbr: "Resp", color: "#d9556e", emoji: "🫁" },
+  { id: "cv", label: "Cardiovascular", abbr: "CV", color: "#E08A3C", emoji: "🫀" },
+  { id: "neuro", label: "Neurological", abbr: "Neuro", color: "#8b6fd1", emoji: "🧠" },
+  { id: "id", label: "Infectious Disease", abbr: "ID", color: "#2fa86b", emoji: "🦠" },
+  { id: "gu", label: "Genitourinary", abbr: "GU", color: "#3b8fd4", emoji: "💧" },
 ];
 
 export const SAMPLE_NOTE = `START_OF_RECORD=synthetic_case_001||||1||||
@@ -225,5 +229,3 @@ export const DEMO_RESULT: VisualNote = {
     },
   ],
 };
-
-export const SHIFTS = [1, 2, 3, 4];

@@ -8,10 +8,14 @@
  * Two things become dynamic here that were hardcoded for the demo: the lane
  * set (only lanes that actually have findings are drawn, in canonical order)
  * and the shift list (real admissions are not four shifts long).
+ *
+ * Headlines are checked here too, on the server, so one that drops a negation
+ * or invents a number never reaches the browser.
  */
 
 import lanesData from "../../schema/lanes.json" with { type: "json" };
 import type { LaneId, VisualNote } from "./demo.ts";
+import { headlineFor } from "./headline.ts";
 
 type Cited = { note_id: number; char_start: number; char_end: number; evidence: string };
 
@@ -25,6 +29,7 @@ type Doc = {
     lane: string;
     shift: number;
     finding: string;
+    headline?: string | null;
     intervention?: string | null;
     orders?: string | null;
     route?: string | null;
@@ -37,6 +42,7 @@ const ORDER = lanesData.lanes as string[];
 const COLOR = lanesData.laneColor as Record<string, string>;
 const ABBR = lanesData.laneAbbr as Record<string, string>;
 const LABEL = lanesData.laneLabel as Record<string, string>;
+const EMOJI = lanesData.laneEmoji as Record<string, string>;
 
 export function toVisualNote(doc: Doc): VisualNote {
   const findings = doc.findings ?? [];
@@ -49,6 +55,7 @@ export function toVisualNote(doc: Doc): VisualNote {
     label: LABEL[id] ?? id,
     abbr: ABBR[id] ?? id.toUpperCase(),
     color: COLOR[id] ?? "#8A97A8",
+    emoji: EMOJI[id] ?? "•",
   }));
 
   const shifts = (doc.shifts ?? [])
@@ -69,6 +76,13 @@ export function toVisualNote(doc: Doc): VisualNote {
       lane: f.lane as LaneId,
       shift: f.shift,
       finding: f.finding,
+      headline: headlineFor({
+        headline: f.headline,
+        finding: f.finding,
+        intervention: f.intervention,
+        orders: f.orders,
+        evidence: f.provenance?.evidence,
+      }),
       intervention: f.intervention ?? undefined,
       orders: f.orders ?? undefined,
       route: (f.route ?? null) as VisualNote["nodes"][number]["route"],

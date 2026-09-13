@@ -1,5 +1,5 @@
 /**
- * Render a VisualNote as native SVG.
+ * Render a VisualNote as native SVG, laid out like the chart on the page.
  *
  * Not a DOM screenshot. This browser taints a canvas the moment an SVG
  * containing <foreignObject> is drawn to it, which blocks the usual
@@ -9,53 +9,62 @@
  * That also buys determinism: the same JSON produces byte-identical output
  * every time, which is what the study asks for from the rendering step.
  *
- * Colours are read back out of the live document, so the export matches
- * whatever the page is actually showing.
+ * Sizes, the rule that narrows a finished lane to a rail, and every line's
+ * route come from chartLayout, the same place the page gets them, and a card
+ * that is open on the page is drawn open here, so the download is the chart
+ * the page shows.
  */
 
-import { SHIFTS, type LaneNode, type VisualNote } from "./demo";
+import type { Lane, LaneNode, VisualNote } from "./demo";
+import {
+  LAYOUT,
+  ROUTE_TONE,
+  buildColumns,
+  buildRows,
+  cardHeadlines,
+  cellKey,
+  isLive,
+  placeCells,
+  routeWires,
+  routesOf,
+  rowPads,
+  type Box,
+  type Group,
+  type Route,
+} from "./chartLayout";
 
-const LANE_W = 196;
-const GAP_X = 10;
+/* ------------------------------------------------------------- geometry --- */
+
 const PAD = 18;
-const CARD_PAD = 10;
+const HEADER_H = 26;
+
+// Inside a card: the colour bar, then text inset from both edges.
 const BAR_W = 3;
+const TEXT_X = 14;
+const TEXT_R = 8;
+const PILL_H = 13;
 
-const FINDING = { size: 12, lh: 15, weight: 600 };
+const HEAD = { size: 12, lh: 16, weight: 600 };
+const FIND = { size: 11.5, lh: 15, weight: 600 };
 const INTERV = { size: 11, lh: 14 };
-const ORDERS = { size: 9, lh: 12 };
+const ORDERS = { size: 8.5, lh: 11.5 };
 
-const ROUTE_TONE: Record<string, string> = {
-  IV: "#c0392b",
-  GTT: "#7d3cc4",
-  PO: "#2f6fd0",
-  NEB: "#1f8a52",
-  O2: "#0e7c86",
-  NIV: "#0e7c86",
+/** The chart is always white, so its palette is fixed rather than read from the page. */
+const INK = {
+  bg: "#ffffff",
+  text: "#0b1b28",
+  textDim: "#52697a",
+  stripe: "#f5f8fa",
+  rule: "#e3eaef",
+  intervention: "#1f5fb4",
+  legendFill: "#f4f8fa",
+  legendStroke: "#d5e1e8",
+  start: { fill: "#e8f1fb", stroke: "#9dbbe0" },
+  end: { fill: "#e2f5e6", stroke: "#8fd19e" },
 };
 
-export type Theme = {
-  bg: string;
-  surface: string;
-  surface2: string;
-  border: string;
-  text: string;
-  textDim: string;
-  navy: string;
-  teal: string;
-  sans: string;
-  mono: string;
-};
-
-/** Resolve a CSS colour expression (var(), color-mix(), …) to a concrete value. */
-function resolve(expr: string): string {
-  const probe = document.createElement("div");
-  probe.style.cssText = `position:absolute;visibility:hidden;background:${expr}`;
-  document.body.appendChild(probe);
-  const value = getComputedStyle(probe).backgroundColor;
-  probe.remove();
-  return value;
-}
+/** The page's fonts, so the image is set in the same type. */
+export type Theme = { sans: string; display: string; mono: string };
 
 function familyOf(cssVar: string, fallback: string): string {
   const probe = document.createElement("div");
@@ -68,17 +77,20 @@ function familyOf(cssVar: string, fallback: string): string {
 
 export function readTheme(): Theme {
   return {
-    bg: resolve("var(--bg)"),
-    surface: resolve("var(--surface)"),
-    surface2: resolve("var(--surface-2)"),
-    border: resolve("var(--border)"),
-    text: resolve("var(--text)"),
-    textDim: resolve("var(--text-dim)"),
-    navy: resolve("var(--color-navy-600)"),
-    teal: resolve("var(--color-teal-500)"),
     sans: familyOf("var(--font-sans)", "system-ui, sans-serif"),
+    display: familyOf("var(--font-display)", "system-ui, sans-serif"),
     mono: familyOf("var(--font-mono)", "ui-monospace, monospace"),
   };
+}
+
+/** Resolve a CSS colour expression to a concrete value the image can carry. */
+function resolve(expr: string): string {
+  const probe = document.createElement("div");
+  probe.style.cssText = `position:absolute;visibility:hidden;background:${expr}`;
+  document.body.appendChild(probe);
+  const value = getComputedStyle(probe).backgroundColor;
+  probe.remove();
+  return value;
 }
 
 function mix(color: string, pct: number, onto: string): string {
@@ -136,213 +148,373 @@ function textEl(
     .join("");
 }
 
-/* --------------------------------------------------------------- layout --- */
+/* ------------------------------------------------------------ primitives --- */
 
-type CardPlan = {
+function pillWidth(route: string, theme: Theme): number {
+  return measure(route, `700 9px ${theme.mono}`) + 12;
+}
+
+function pill(route: string, x: number, y: number, theme: Theme): string {
+  const tone = ROUTE_TONE[route] ?? INK.textDim;
+  const w = pillWidth(route, theme);
+  return (
+    `<rect x="${x}" y="${y}" width="${w}" height="${PILL_H}" rx="3" fill="${mix(tone, 12, INK.bg)}"/>` +
+    `<text x="${x + w / 2}" y="${y + 9.5}" text-anchor="middle" font-family="${esc(theme.mono)}" ` +
+    `font-size="9" font-weight="700" fill="${tone}">${esc(route)}</text>`
+  );
+}
+
+/* ---------------------------------------------------------------- cards --- */
+
+type DetailPlan = {
   finding: string[];
   interv: string[];
-  orders: string;
+  orders: string[];
   route: LaneNode["route"];
   height: number;
 };
 
-function planCard(node: LaneNode, theme: Theme): CardPlan {
-  const inner = LANE_W - CARD_PAD * 2 - BAR_W - 4;
-  const fFont = `${FINDING.weight} ${FINDING.size}px ${theme.sans}`;
-  const iFont = `italic ${INTERV.size}px ${theme.sans}`;
+type CardPlan = {
+  headlines: string[][];
+  more: number;
+  routes: Route[];
+  /** Height of the card closed: header, headlines, padding. */
+  closed: number;
+  /** One entry per finding when the card is open; empty when closed. */
+  details: DetailPlan[];
+  height: number;
+};
 
-  const finding = wrap(node.finding, fFont, inner);
-  const interv = node.intervention ? wrap(node.intervention, iFont, inner - 10) : [];
+function planCard(group: Group, isOpen: boolean, theme: Theme, width: number): CardPlan {
+  // The image may fall back to a system font a little wider than the page's,
+  // so text is wrapped a few pixels short of the card edge.
+  const textW = width - TEXT_X - TEXT_R - 4;
+  const { shown, more } = cardHeadlines(group);
+  const headlines = shown.map((h) => wrap(h, `${HEAD.weight} ${HEAD.size}px ${theme.sans}`, textW));
+  const lineCount = headlines.reduce((a, l) => a + l.length, 0);
+  const closed =
+    8 + 14 + 4 + lineCount * HEAD.lh + (headlines.length - 1) * 2 + (more ? 14 : 0) + 8;
 
-  let h = CARD_PAD + finding.length * FINDING.lh;
-  if (interv.length) h += 8 + 6 + interv.length * INTERV.lh + 6;
-  h += 8 + ORDERS.lh + CARD_PAD;
-  return { finding, interv, orders: node.orders ?? "", route: node.route, height: h };
+  const details: DetailPlan[] = [];
+  let height = closed;
+  if (isOpen) {
+    const fFont = `${FIND.weight} ${FIND.size}px ${theme.sans}`;
+    const iFont = `italic ${INTERV.size}px ${theme.sans}`;
+    const oFont = `${ORDERS.size}px ${theme.mono}`;
+    height += 1 + 10;
+    group.nodes.forEach((node, i) => {
+      const routeW = node.route ? pillWidth(node.route, theme) + 6 : 0;
+      const finding = wrap(node.finding, fFont, textW);
+      const interv = node.intervention ? wrap(node.intervention, iFont, textW) : [];
+      const orders = node.orders ? wrap(node.orders.toUpperCase(), oFont, textW - routeW) : [];
+      let h = finding.length * FIND.lh;
+      if (interv.length) h += 4 + interv.length * INTERV.lh;
+      if (orders.length || node.route) {
+        h += 4 + Math.max(orders.length * ORDERS.lh, node.route ? PILL_H : 0);
+      }
+      details.push({ finding, interv, orders, route: node.route, height: h });
+      height += h + (i > 0 ? 10 : 0);
+    });
+    height += 10;
+  }
+
+  return { headlines, more, routes: routesOf(group.nodes), closed, details, height };
 }
+
+function drawCard(b: Box, lane: Lane, plan: CardPlan, theme: Theme, clipId: string): string {
+  const { x, y, w } = b;
+  const h = plan.height;
+  const tx = x + TEXT_X;
+  const out: string[] = [];
+
+  // Body, then the lane-colour bar clipped to the card's rounded corners.
+  out.push(
+    `<clipPath id="${clipId}"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="8"/></clipPath>` +
+      `<rect x="${x + 0.5}" y="${y + 0.5}" width="${w - 1}" height="${h - 1}" rx="8" ` +
+      `fill="${mix(lane.color, 16, INK.bg)}" stroke="${mix(lane.color, 55, INK.bg)}"/>` +
+      `<rect x="${x}" y="${y}" width="${BAR_W}" height="${h}" fill="${lane.color}" clip-path="url(#${clipId})"/>`,
+  );
+
+  // Header: the lane's emoji on the left, route tags on the right.
+  out.push(`<text x="${tx}" y="${y + 19}" font-size="12">${esc(lane.emoji)}</text>`);
+  let px = x + w - TEXT_R;
+  for (const route of [...plan.routes].reverse()) {
+    px -= pillWidth(route, theme);
+    out.push(pill(route, px, y + 8, theme));
+    px -= 4;
+  }
+
+  // Headlines.
+  let baseline = y + 8 + 14 + 4 + HEAD.size - 1;
+  for (const lines of plan.headlines) {
+    out.push(
+      textEl(lines, tx, baseline, {
+        size: HEAD.size, lh: HEAD.lh, fill: INK.text, font: theme.sans, weight: HEAD.weight,
+      }),
+    );
+    baseline += lines.length * HEAD.lh + 2;
+  }
+  if (plan.more) {
+    out.push(
+      textEl([`+${plan.more} more`], tx, baseline, {
+        size: 10.5, lh: 14, fill: INK.textDim, font: theme.sans,
+      }),
+    );
+  }
+
+  // Open: a rule, then each finding in full.
+  if (plan.details.length) {
+    let top = y + plan.closed;
+    out.push(
+      `<rect x="${x + BAR_W}" y="${top}" width="${w - BAR_W}" height="1" ` +
+        `fill="${mix(lane.color, 45, INK.bg)}"/>`,
+    );
+    top += 1 + 10;
+    plan.details.forEach((d, i) => {
+      if (i > 0) top += 10;
+      out.push(
+        textEl(d.finding, tx, top + FIND.size - 1, {
+          size: FIND.size, lh: FIND.lh, fill: INK.text, font: theme.sans, weight: FIND.weight,
+        }),
+      );
+      let cursor = top + d.finding.length * FIND.lh;
+      if (d.interv.length) {
+        cursor += 4;
+        out.push(
+          textEl(d.interv, tx, cursor + INTERV.size - 1, {
+            size: INTERV.size, lh: INTERV.lh, fill: INK.intervention, font: theme.sans, italic: true,
+          }),
+        );
+        cursor += d.interv.length * INTERV.lh;
+      }
+      if (d.orders.length || d.route) {
+        cursor += 4;
+        if (d.orders.length) {
+          out.push(
+            textEl(d.orders, tx, cursor + ORDERS.size, {
+              size: ORDERS.size, lh: ORDERS.lh, fill: INK.textDim, font: theme.mono,
+            }),
+          );
+        }
+        if (d.route) {
+          out.push(pill(d.route, x + w - TEXT_R - pillWidth(d.route, theme), cursor, theme));
+        }
+      }
+      top += d.height;
+    });
+  }
+
+  return out.join("");
+}
+
+/* ------------------------------------------------------- page furniture --- */
 
 function terminus(
   lines: string[],
   label: string,
-  x: number,
-  y: number,
-  width: number,
-  accent: string,
+  b: { x: number; y: number; w: number },
+  tone: "start" | "end",
   theme: Theme,
 ): { svg: string; height: number } {
-  const font = `500 12.5px ${theme.sans}`;
-  const wrapped = lines.flatMap((l) => wrap(l, font, width - 40));
+  const font = `500 12px ${theme.sans}`;
+  const wrapped = lines.flatMap((l) => wrap(l, font, b.w - 40));
   const h = 14 + 12 + wrapped.length * 16 + 14;
+  const cx = b.x + b.w / 2;
   const svg =
-    `<rect x="${x}" y="${y}" width="${width}" height="${h}" rx="12" ` +
-    `fill="${mix(accent, 13, theme.surface)}" stroke="${mix(accent, 42, "transparent")}"/>` +
-    textEl([label.toUpperCase()], x + width / 2, y + 20, {
-      size: 9, lh: 11, fill: theme.textDim, font: theme.mono, weight: 700,
-    }).replace(/<text /g, '<text text-anchor="middle" ') +
+    `<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${h}" rx="12" ` +
+    `fill="${INK[tone].fill}" stroke="${INK[tone].stroke}"/>` +
+    `<text x="${cx}" y="${b.y + 20}" text-anchor="middle" font-family="${esc(theme.mono)}" ` +
+    `font-size="9" font-weight="700" letter-spacing="1.8" fill="${INK.textDim}">${esc(label.toUpperCase())}</text>` +
     wrapped
       .map(
         (l, i) =>
-          `<text x="${x + width / 2}" y="${y + 38 + i * 16}" text-anchor="middle" ` +
-          `font-family="${esc(theme.sans)}" font-size="12.5" font-weight="500" ` +
-          `fill="${theme.text}">${esc(l)}</text>`,
+          `<text x="${cx}" y="${b.y + 38 + i * 16}" text-anchor="middle" ` +
+          `font-family="${esc(theme.sans)}" font-size="12" font-weight="500" ` +
+          `fill="${INK.text}">${esc(l)}</text>`,
       )
       .join("");
   return { svg, height: h };
 }
 
+/** The key, flowed onto as many lines as the chart's width needs. */
+function legend(result: VisualNote, x: number, y: number, width: number, theme: Theme) {
+  type Item = { w: number; draw: (ix: number, mid: number) => string };
+  const itemFont = `10.5px ${theme.sans}`;
+  const small = (text: string, ix: number, mid: number) =>
+    `<text x="${ix}" y="${mid + 3.5}" font-family="${esc(theme.sans)}" font-size="10.5" ` +
+    `fill="${INK.textDim}">${esc(text)}</text>`;
+  const heading = (text: string): Item => ({
+    w: measure(text, `700 9px ${theme.mono}`) + text.length * 1.6,
+    draw: (ix, mid) =>
+      `<text x="${ix}" y="${mid + 3}" font-family="${esc(theme.mono)}" font-size="9" ` +
+      `font-weight="700" letter-spacing="1.6" fill="${INK.textDim}">${esc(text)}</text>`,
+  });
+
+  const items: Item[] = [heading("LANES")];
+  for (const lane of result.lanes) {
+    items.push({
+      w: 31 + measure(lane.label, itemFont),
+      draw: (ix, mid) =>
+        `<rect x="${ix}" y="${mid - 4}" width="8" height="8" rx="2" fill="${lane.color}"/>` +
+        `<text x="${ix + 13}" y="${mid + 4.5}" font-size="12">${esc(lane.emoji)}</text>` +
+        small(lane.label, ix + 31, mid),
+    });
+  }
+  const routes = routesOf(result.nodes);
+  if (routes.length) {
+    items.push(heading("ROUTES"));
+    for (const route of routes) {
+      items.push({ w: pillWidth(route, theme), draw: (ix, mid) => pill(route, ix, mid - PILL_H / 2, theme) });
+    }
+  }
+  const note = "before the first and after the last update";
+  items.push({
+    w: 8 + measure(note, itemFont),
+    draw: (ix, mid) =>
+      `<line x1="${ix + 1}" y1="${mid - 6}" x2="${ix + 1}" y2="${mid + 6}" stroke="${INK.textDim}" ` +
+      `stroke-width="1.5" stroke-dasharray="3 3"/>` +
+      small(note, ix + 8, mid),
+  });
+
+  const PAD_X = 12;
+  const PAD_Y = 6;
+  const LINE_H = 20;
+  const GAP = 14;
+  const placed: { item: Item; ix: number; line: number }[] = [];
+  let ix = x + PAD_X;
+  let line = 0;
+  for (const item of items) {
+    if (ix > x + PAD_X && ix + item.w > x + width - PAD_X) {
+      line += 1;
+      ix = x + PAD_X;
+    }
+    placed.push({ item, ix, line });
+    ix += item.w + GAP;
+  }
+
+  const height = PAD_Y * 2 + (line + 1) * LINE_H;
+  const svg =
+    `<rect x="${x}" y="${y}" width="${width}" height="${height}" rx="8" ` +
+    `fill="${INK.legendFill}" stroke="${INK.legendStroke}"/>` +
+    placed.map((p) => p.item.draw(p.ix, y + PAD_Y + p.line * LINE_H + LINE_H / 2)).join("");
+  return { svg, height };
+}
+
 /* ---------------------------------------------------------------- build --- */
 
-export function renderChartSvg(result: VisualNote, theme: Theme): string {
-  const lanes = result.lanes;
-  const width = PAD * 2 + lanes.length * LANE_W + (lanes.length - 1) * GAP_X;
-  const colX = (i: number) => PAD + i * (LANE_W + GAP_X);
+export function renderChartSvg(
+  result: VisualNote,
+  theme: Theme,
+  open: ReadonlySet<string> = new Set(),
+): string {
+  const columns = buildColumns(result);
+  const rows = buildRows(result);
+  const pads = rowPads(columns, rows);
 
-  const parts: string[] = [];
+  // Wide enough for every lane at a comfortable card width, within reason.
+  const laneArea = Math.min(1500, Math.max(760, columns.length * 165));
+  const contentW = LAYOUT.labelW + laneArea;
+  const width = PAD * 2 + contentW;
+  const areaX = PAD + LAYOUT.labelW;
+  const place = (live: boolean[]) =>
+    placeCells(live, laneArea).map((c) => ({ x: areaX + c.x, w: c.w }));
+
+  const boxW = Math.min(contentW, LAYOUT.boxMax);
+  const boxX = PAD + (contentW - boxW) / 2;
+
+  const back: string[] = [];
+  const front: string[] = [];
+  const heads = new Map<string, Box>();
+  const cells = new Map<string, Box>();
+  const cards = new Map<string, Box>();
+  const geoRows: { shift: number; y: number; h: number; pad: number }[] = [];
+  let clips = 0;
   let y = PAD;
 
-  // Admission
-  const adm = terminus(result.admission, "Admission", PAD, y, width - PAD * 2, theme.navy, theme);
-  parts.push(adm.svg);
-  y += adm.height + 14;
+  const adm = terminus(result.admission, "Admission", { x: boxX, y, w: boxW }, "start", theme);
+  front.push(adm.svg);
+  const admission = { x: boxX, y, w: boxW, h: adm.height };
+  y += adm.height + LAYOUT.linkGap;
 
-  // Lane headers
-  lanes.forEach((lane, i) => {
-    parts.push(
-      `<rect x="${colX(i)}" y="${y}" width="${LANE_W}" height="26" rx="6" ` +
-        `fill="${mix(lane.color, 14, "transparent")}"/>` +
-        `<circle cx="${colX(i) + 12}" cy="${y + 13}" r="4" fill="${lane.color}"/>` +
-        `<text x="${colX(i) + 24}" y="${y + 17}" font-family="${esc(theme.mono)}" ` +
-        `font-size="10" font-weight="700" letter-spacing="1.4" fill="${lane.color}">` +
+  // Lane headers, one per lane, all live at the top.
+  place(columns.map(() => true)).forEach((cell, i) => {
+    const { lane } = columns[i];
+    heads.set(lane.id, { x: cell.x, y, w: cell.w, h: HEADER_H });
+    front.push(
+      `<rect x="${cell.x}" y="${y}" width="${cell.w}" height="${HEADER_H}" rx="6" ` +
+        `fill="${mix(lane.color, 20, INK.bg)}"/>` +
+        `<text x="${cell.x + 8}" y="${y + 18}" font-size="14">${esc(lane.emoji)}</text>` +
+        `<text x="${cell.x + 29}" y="${y + 17}" font-family="${esc(theme.mono)}" ` +
+        `font-size="10" font-weight="700" letter-spacing="1.4" fill="${mix(lane.color, 72, "#000000")}">` +
         `${esc(lane.abbr.toUpperCase())}</text>`,
     );
   });
-  y += 26 + 10;
+  y += HEADER_H + 4;
 
-  // Lane spines run the full height of the matrix; drawn first, behind cards.
-  const matrixTop = y;
-  const rowPlans = SHIFTS.map((shift) =>
-    lanes.map((lane) => {
-      const node = result.nodes.find((n) => n.lane === lane.id && n.shift === shift);
-      return node ? planCard(node, theme) : null;
-    }),
-  );
-  const rowHeights = rowPlans.map((row) =>
-    Math.max(96, ...row.map((c) => (c ? c.height : 0))),
-  );
-  const matrixHeight = rowHeights.reduce((a, b) => a + b + 12, 0);
-
-  lanes.forEach((lane, i) => {
-    parts.push(
-      `<rect x="${colX(i) + LANE_W / 2 - 0.5}" y="${matrixTop}" width="1" ` +
-        `height="${matrixHeight}" fill="${mix(lane.color, 38, "transparent")}"/>`,
-    );
-  });
-
-  // Cards
-  rowPlans.forEach((row, r) => {
-    const rowH = rowHeights[r];
-    row.forEach((plan, i) => {
-      const x = colX(i);
-      const lane = lanes[i];
-      if (!plan) {
-        parts.push(
-          `<circle cx="${x + LANE_W / 2}" cy="${y + rowH / 2}" r="3" ` +
-            `fill="${mix(lane.color, 55, "transparent")}"/>`,
-        );
-        return;
-      }
-      parts.push(
-        `<rect x="${x}" y="${y}" width="${LANE_W}" height="${rowH}" rx="9" ` +
-          `fill="${mix(lane.color, 9, theme.surface)}" ` +
-          `stroke="${mix(lane.color, 38, "transparent")}"/>` +
-          `<path d="M${x + 9} ${y} h-${9 - BAR_W} a9 9 0 0 0 -9 9 v${rowH - 18} ` +
-          `a9 9 0 0 0 9 9 h${9 - BAR_W} z" fill="${lane.color}"/>`,
-      );
-
-      let ty = y + CARD_PAD + FINDING.size;
-      parts.push(
-        textEl(plan.finding, x + CARD_PAD + BAR_W + 3, ty, {
-          size: FINDING.size, lh: FINDING.lh, fill: theme.text,
-          font: theme.sans, weight: FINDING.weight,
-        }),
-      );
-      ty += (plan.finding.length - 1) * FINDING.lh;
-
-      if (plan.interv.length) {
-        const boxY = ty + 8;
-        const boxH = plan.interv.length * INTERV.lh + 10;
-        parts.push(
-          `<rect x="${x + CARD_PAD + BAR_W}" y="${boxY}" ` +
-            `width="${LANE_W - CARD_PAD * 2 - BAR_W}" height="${boxH}" rx="4" ` +
-            `fill="${mix(theme.text, 5, "transparent")}"/>` +
-            textEl(plan.interv, x + CARD_PAD + BAR_W + 6, boxY + INTERV.size + 4, {
-              size: INTERV.size, lh: INTERV.lh, fill: theme.textDim,
-              font: theme.sans, italic: true,
-            }),
-        );
-        ty = boxY + boxH;
-      }
-
-      const footY = y + rowH - CARD_PAD - 2;
-      const routeW = plan.route ? 26 : 0;
-      const ordersFont = `${ORDERS.size}px ${theme.mono}`;
-      let orders = plan.orders.toUpperCase();
-      const maxOrders = LANE_W - CARD_PAD * 2 - BAR_W - routeW - 8;
-      while (orders && measure(orders, ordersFont) > maxOrders) {
-        orders = orders.slice(0, -2);
-      }
-      if (orders !== plan.orders.toUpperCase() && orders) orders += "…";
-      parts.push(
-        `<text x="${x + CARD_PAD + BAR_W + 3}" y="${footY}" font-family="${esc(theme.mono)}" ` +
-          `font-size="${ORDERS.size}" letter-spacing="0.6" fill="${theme.textDim}">` +
-          `${esc(orders)}</text>`,
-      );
-      if (plan.route) {
-        const tone = ROUTE_TONE[plan.route] ?? theme.textDim;
-        parts.push(
-          `<rect x="${x + LANE_W - CARD_PAD - routeW}" y="${footY - 9}" width="${routeW}" ` +
-            `height="13" rx="3" fill="${mix(tone, 16, "transparent")}"/>` +
-            `<text x="${x + LANE_W - CARD_PAD - routeW / 2}" y="${footY}" ` +
-            `text-anchor="middle" font-family="${esc(theme.mono)}" font-size="8.5" ` +
-            `font-weight="700" fill="${tone}">${esc(plan.route)}</text>`,
-        );
-      }
+  // One row per shift, as tall as its tallest card.
+  rows.forEach((shift, r) => {
+    const placed = place(columns.map((c) => isLive(c, shift)));
+    const pad = pads[r];
+    const plans = columns.map((c, i) => {
+      const group = c.groups.get(shift);
+      return group ? { group, plan: planCard(group, open.has(group.key), theme, placed[i].w) } : null;
     });
-    y += rowH + 12;
-  });
-
-  y += 2;
-  const out = terminus(result.outcome, "Outcome", PAD, y, width - PAD * 2, theme.teal, theme);
-  parts.push(out.svg);
-  y += out.height + 14;
-
-  // Legend
-  const legendH = 30;
-  parts.push(
-    `<rect x="${PAD}" y="${y}" width="${width - PAD * 2}" height="${legendH}" rx="8" ` +
-      `fill="${theme.surface2}" stroke="${theme.border}"/>`,
-  );
-  let lx = PAD + 12;
-  parts.push(
-    `<text x="${lx}" y="${y + 19}" font-family="${esc(theme.mono)}" font-size="9" ` +
-      `font-weight="700" letter-spacing="1.6" fill="${theme.textDim}">LANES</text>`,
-  );
-  lx += 52;
-  lanes.forEach((lane) => {
-    const label = lane.label;
-    parts.push(
-      `<rect x="${lx}" y="${y + 11}" width="8" height="8" rx="2" fill="${lane.color}"/>` +
-        `<text x="${lx + 13}" y="${y + 18}" font-family="${esc(theme.sans)}" font-size="10.5" ` +
-        `fill="${theme.textDim}">${esc(label)}</text>`,
+    const hasCards = plans.some(Boolean);
+    const rowH = Math.max(
+      LAYOUT.rowMin,
+      ...plans.map((p) => (p ? pad + p.plan.height + LAYOUT.belowCard : 0)),
     );
-    lx += 13 + measure(label, `10.5px ${theme.sans}`) + 20;
+
+    if (r % 2) back.push(`<rect x="${PAD}" y="${y}" width="${contentW}" height="${rowH}" fill="${INK.stripe}"/>`);
+    back.push(`<rect x="${PAD}" y="${y}" width="${contentW}" height="1" fill="${INK.rule}"/>`);
+    front.push(
+      `<text x="${PAD + 6}" y="${y + (hasCards ? pad + 9 : 10) + 10}" font-family="${esc(theme.display)}" ` +
+        `font-size="12.5" font-weight="800" letter-spacing="0.75" ` +
+        `fill="${hasCards ? INK.text : INK.textDim}">SHIFT ${shift}</text>`,
+    );
+
+    columns.forEach((column, i) => {
+      cells.set(cellKey(column.lane.id, shift), { x: placed[i].x, y, w: placed[i].w, h: rowH });
+      const p = plans[i];
+      if (!p) return;
+      const card = { x: placed[i].x, y: y + pad, w: placed[i].w, h: p.plan.height };
+      cards.set(p.group.key, card);
+      front.push(drawCard(card, column.lane, p.plan, theme, `card${clips++}`));
+    });
+
+    geoRows.push({ shift, y, h: rowH, pad });
+    y += rowH;
   });
-  y += legendH + PAD;
+
+  y += LAYOUT.linkGap;
+  const out = terminus(result.outcome, "Outcome", { x: boxX, y, w: boxW }, "end", theme);
+  front.push(out.svg);
+  const outcome = { x: boxX, y, w: boxW, h: out.height };
+  y += out.height + 12;
+
+  const key = legend(result, PAD, y, contentW, theme);
+  front.push(key.svg);
+  y += key.height + PAD;
+
+  // Lines last in the maths but beneath the cards on the page.
+  const colorOf = new Map<string, string>(columns.map((c) => [c.lane.id, c.lane.color]));
+  const wires = routeWires({ admission, outcome, heads, rows: geoRows, cells, cards }, columns).map((w) => {
+    const color = mix(colorOf.get(w.lane) ?? "#8a97a8", 65, INK.bg);
+    return (
+      `<path d="${w.d}" fill="none" stroke="${color}" stroke-width="1.5"` +
+      `${w.dashed ? ' stroke-dasharray="4 3"' : ""}/>` +
+      `<path d="${w.arrow}" fill="none" stroke="${color}" stroke-width="1.5" ` +
+      `stroke-linecap="round" stroke-linejoin="round"/>`
+    );
+  });
 
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${y}" ` +
     `viewBox="0 0 ${width} ${y}">` +
-    `<rect width="${width}" height="${y}" fill="${theme.bg}"/>` +
-    parts.join("") +
+    `<rect width="${width}" height="${y}" fill="${INK.bg}"/>` +
+    back.join("") +
+    wires.join("") +
+    front.join("") +
     `</svg>`
   );
 }

@@ -22,10 +22,12 @@ function triggerDownload(blob: Blob, filename: string) {
 
 export async function downloadChartPng(
   result: VisualNote,
+  open: ReadonlySet<string> = new Set(),
   filename = "visual-note.png",
   scale = 2,
 ): Promise<void> {
-  const svg = renderChartSvg(result, readTheme());
+  // The cards open on the page are drawn open in the image.
+  const svg = renderChartSvg(result, readTheme(), open);
 
   // Catch malformed markup here, where the error is readable, rather than as a
   // bare image-load failure later.

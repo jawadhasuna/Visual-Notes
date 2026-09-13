@@ -245,5 +245,21 @@
     "pain": "Pain",
     "mobility": "Mobility",
     "social": "Social"
+  },
+  "laneEmoji": {
+    "resp": "🫁",
+    "cv": "🫀",
+    "neuro": "🧠",
+    "gi": "🍽️",
+    "gu": "💧",
+    "id": "🦠",
+    "endo": "🍬",
+    "heme": "🩸",
+    "fluids": "⚖️",
+    "skin": "🩹",
+    "lines": "💉",
+    "pain": "😣",
+    "mobility": "🚶",
+    "social": "👪"
   }
 }
