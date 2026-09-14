@@ -313,20 +313,33 @@ export async function* extractStreaming(
     ranges: chunks.map((c) => [c[0], c[c.length - 1]] as [number, number]),
   };
 
-  // Leave headroom under the host's limit: one more part takes about thirty
-  // seconds, and finalising and validating the document takes a moment more.
-  // Overrunning is not a slow response, it is a killed connection with no
-  // closing event, so the margin is deliberately generous.
-  const BUDGET_MS = Number(process.env.EXTRACT_BUDGET_MS ?? 240_000);
+  // The host kills a request at five minutes, with no closing event, so on
+  // Vercel every part must be finished by 4 min 40 s, leaving twenty seconds
+  // for finalising the document. A part is not simply started before the
+  // deadline, since one that starts at 4:35 would still be running at 5:00:
+  // a new part starts only if, judging by the slowest part so far, it will be
+  // done by then. Parts vary a lot (18 to 54 seconds within one case), so the
+  // last part alone is too optimistic; the first is left out of the estimate
+  // because it also pays for warming up.
+  //
+  // The limit belongs to the host, so it applies only there: Vercel marks its
+  // own servers with VERCEL. Run anywhere else, such as on localhost, nothing
+  // kills the request, and a long admission is extracted to its last shift.
+  const DEADLINE_MS = Number(
+    process.env.EXTRACT_BUDGET_MS ?? (process.env.VERCEL ? 280_000 : Infinity),
+  );
   let truncated = false;
   let partsDone = 0;
+  let lastPartMs = 0;
+  let slowestMs = 0;
 
   for (let i = 0; i < chunks.length; i++) {
-    if (i > 0 && Date.now() - started > BUDGET_MS) {
+    if (i > 0 && Date.now() - started + (slowestMs || lastPartMs) > DEADLINE_MS) {
       truncated = true;
       break;
     }
     const noteIds = chunks[i];
+    const partStarted = Date.now();
 
     // The full note map is passed through so provenance can resolve against
     // the whole admission; the prompt renders only this chunk's notes.
@@ -371,6 +384,8 @@ export async function* extractStreaming(
         }`,
       };
     }
+    lastPartMs = Date.now() - partStarted;
+    if (i > 0) slowestMs = Math.max(slowestMs, lastPartMs);
   }
 
   finaliseDoc(target, notes);
